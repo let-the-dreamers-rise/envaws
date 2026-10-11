@@ -1,2 +1,2 @@
-cedarpy==4.8.0
+cedarpy==4.12.1
 strands-agents==1.59.0

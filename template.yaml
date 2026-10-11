@@ -1,0 +1,204 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: CleanHour - moves school outdoor time into the cleanest hour of the day.
+
+Parameters:
+  ModelId:
+    Type: String
+    Default: us.amazon.nova-2-lite-v1:0
+    Description: Bedrock model (or inference profile) used by the Strands agent.
+  BedrockRegion:
+    Type: String
+    Default: us-east-1
+
+Globals:
+  Function:
+    Runtime: python3.13
+    Architectures: [x86_64]
+    CodeUri: backend/
+    Timeout: 60
+    MemorySize: 1024
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref Table
+        VOICE_BUCKET: !Ref VoiceBucket
+        MODEL_ID: !Ref ModelId
+        BEDROCK_REGION: !Ref BedrockRegion
+        LLM_MODE: auto
+
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: pk, AttributeType: S }
+        - { AttributeName: sk, AttributeType: S }
+      KeySchema:
+        - { AttributeName: pk, KeyType: HASH }
+        - { AttributeName: sk, KeyType: RANGE }
+
+  VoiceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - { Id: expire-voice-notes, Status: Enabled, ExpirationInDays: 30 }
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: ["*"]
+        AllowMethods: [GET, POST, OPTIONS]
+        AllowHeaders: [content-type]
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: cleanhour.api.handler
+      Environment:
+        Variables:
+          STATE_MACHINE_ARN: !Ref DailyPlan
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref Table }
+        - S3ReadPolicy: { BucketName: !Ref VoiceBucket }
+        - StepFunctionsExecutionPolicy: { StateMachineName: !GetAtt DailyPlan.Name }
+        - Statement:
+            - Effect: Allow
+              Action: [states:SendTaskSuccess, states:StopExecution]
+              Resource: "*"
+            - Effect: Allow
+              Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
+              Resource: "*"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/api/{proxy+}", Method: ANY }
+
+  PlanFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: cleanhour.workflow.plan_task
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref Table }
+        - Statement:
+            - Effect: Allow
+              Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
+              Resource: "*"
+
+  WaitFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: cleanhour.workflow.wait_task
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref Table }
+
+  PublishFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: cleanhour.workflow.publish_task
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref Table }
+        - S3CrudPolicy: { BucketName: !Ref VoiceBucket }
+        - Statement:
+            - Effect: Allow
+              Action: [polly:SynthesizeSpeech]
+              Resource: "*"
+
+  SchedulerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: cleanhour.workflow.scheduled
+      Environment:
+        Variables:
+          STATE_MACHINE_ARN: !Ref DailyPlan
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref Table }
+        - StepFunctionsExecutionPolicy: { StateMachineName: !GetAtt DailyPlan.Name }
+        - Statement:
+            - Effect: Allow
+              Action: [states:StopExecution]
+              Resource: "*"
+      Events:
+        Morning:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(30 5 * * ? *)
+            ScheduleExpressionTimezone: Asia/Kolkata
+
+  DailyPlan:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Type: STANDARD
+      Policies:
+        - LambdaInvokePolicy: { FunctionName: !Ref PlanFunction }
+        - LambdaInvokePolicy: { FunctionName: !Ref WaitFunction }
+        - LambdaInvokePolicy: { FunctionName: !Ref PublishFunction }
+      DefinitionSubstitutions:
+        PlanArn: !GetAtt PlanFunction.Arn
+        WaitArn: !GetAtt WaitFunction.Arn
+        PublishArn: !GetAtt PublishFunction.Arn
+      Definition:
+        Comment: Plan the day, wait for the principal (until 6:45 AM for a 5:30 run), publish.
+        StartAt: Plan
+        States:
+          Plan:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters: { FunctionName: "${PlanArn}", Payload.$: "$" }
+            ResultPath: null
+            Retry:
+              - { ErrorEquals: [Lambda.ServiceException, Lambda.TooManyRequestsException], MaxAttempts: 2, IntervalSeconds: 3 }
+            Next: WaitForApproval
+          WaitForApproval:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke.waitForTaskToken
+            Parameters:
+              FunctionName: "${WaitArn}"
+              Payload:
+                school_id.$: $.school_id
+                date.$: $.date
+                run_id.$: $.run_id
+                task_token.$: $$.Task.Token
+            TimeoutSeconds: 4500
+            ResultPath: $.approval
+            Catch:
+              - { ErrorEquals: [States.Timeout], ResultPath: $.timeout, Next: AutoPublish }
+            Next: Publish
+          Publish:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters:
+              FunctionName: "${PublishArn}"
+              Payload:
+                school_id.$: $.school_id
+                date.$: $.date
+                run_id.$: $.run_id
+                approval.$: $.approval
+                auto: false
+            End: true
+          AutoPublish:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters:
+              FunctionName: "${PublishArn}"
+              Payload:
+                school_id.$: $.school_id
+                date.$: $.date
+                run_id.$: $.run_id
+                auto: true
+            End: true
+
+Outputs:
+  ApiUrl:
+    Description: Base URL for the frontend's config.js
+    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
+  StateMachine:
+    Value: !Ref DailyPlan
