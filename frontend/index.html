@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CleanHour · Don't cancel play. Move it to the clean hour.</title>
+  <meta name="description" content="CleanHour reads the air forecast at 5:30 AM and moves every school outdoor period into the cleanest hour of the day, checks it against GRAP rules, and tells parents in Hindi.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="landing.css">
+  <link rel="stylesheet" href="landing-sections.css">
+  <script>document.documentElement.classList.replace("no-js", "js"); setTimeout(function () { document.documentElement.classList.add("reveal"); }, 3000);</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="nav" id="nav">
+    <a class="brand" href="#top" aria-label="CleanHour home"><span class="brand-mark" aria-hidden="true"></span>CleanHour</a>
+    <nav aria-label="Sections">
+      <a href="#how">How it works</a><a href="#toy">Try it</a><a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn btn-small" href="console.html?date=2025-11-21">Live console</a>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <p class="eyebrow" data-rise>For school principals in Delhi-NCR</p>
+        <h1 class="display" data-split>Don't cancel play.<br><em>Move it to the clean&nbsp;hour.</em></h1>
+        <p class="lede" data-rise>On smog-season mornings, Delhi's air at 8 AM is about twice as dirty as at 1 PM.
+          CleanHour reads the forecast at 5:30 AM, moves every outdoor period into the cleanest hour, checks each
+          move against GRAP rules, and tells parents in Hindi, all before the school bus leaves.</p>
+        <div class="cta-row" data-rise>
+          <a class="btn btn-primary" href="console.html?date=2025-11-21">Run the live demo</a>
+          <a class="btn btn-ghost" href="#how">See how it works</a>
+        </div>
+        <p class="hindi" lang="hi" data-rise>खेलना बंद नहीं, वक़्त बदलो।</p>
+      </div>
+
+      <figure class="day" id="day" aria-label="Animation: on 21 November 2025 in Rohini, Delhi, PE periods move from the smoggy morning (PM2.5 184) to the clear afternoon (PM2.5 90).">
+        <div class="day-sky" aria-hidden="true">
+          <div class="haze haze-a" data-depth="18"></div>
+          <div class="haze haze-b" data-depth="34"></div>
+          <div class="haze haze-c" data-depth="52"></div>
+          <canvas class="motes"></canvas>
+          <div class="ceiling"><span>inversion layer</span></div>
+          <div class="sunline"></div>
+        </div>
+        <div class="readout" aria-hidden="true">
+          <span class="ro-time">8:05 AM</span>
+          <span class="ro-pm"><b class="ro-num">184</b> µg/m³ PM2.5</span>
+          <span class="ro-band">Very Poor</span>
+        </div>
+        <div class="track" aria-hidden="true">
+          <span class="tile" style="left:5.6%" data-from="0.056" data-to="0.889">3A · PE</span>
+          <span class="tile" style="left:16.7%" data-from="0.167" data-to="0.778">5A · PE</span>
+          <span class="tile" style="left:27.8%" data-from="0.278" data-to="0.667">7A · PE</span>
+        </div>
+        <div class="ticks" aria-hidden="true">
+          <span style="left:0.00%">7:45</span><span style="left:16.67%">8:45</span><span style="left:33.33%">9:45</span><span style="left:50.00%">10:45</span><span style="left:66.67%">11:45</span><span style="left:83.33%">12:45</span><span style="left:100.00%">1:45</span>
+        </div>
+        <figcaption>Real forecast · Rohini, Delhi · 21 Nov 2025 · CAMS via Open-Meteo</figcaption>
+      </figure>
+    </section>
+
+    <section class="marquee" aria-label="Evidence">
+      <div class="marquee-track">
+        <ul class="marquee-list">
+          <li><b>29%</b> of Delhi teens show asthma on spirometry <cite>Lung India, 2021</cite></li>
+          <li><b>88%</b> of them were never diagnosed <cite>Lung India, 2021</cite></li>
+          <li><b>43.5%</b> of Delhi schoolchildren had lung-function deficits <cite>CPCB study</cite></li>
+          <li><b>5,556</b> schools · <b>44.9 lakh</b> students in Delhi <cite>UDISE+ 2024-25</cite></li>
+          <li>Nov 2025: outdoor school sports suspended across NCR <cite>CAQM</cite></li>
+          <li>PM2.5 peaks in the morning rush in Indian megacities <cite>EGU 2022</cite></li>
+        </ul>
+        <ul class="marquee-list" aria-hidden="true">
+          <li><b>29%</b> of Delhi teens show asthma on spirometry <cite>Lung India, 2021</cite></li>
+          <li><b>88%</b> of them were never diagnosed <cite>Lung India, 2021</cite></li>
+          <li><b>43.5%</b> of Delhi schoolchildren had lung-function deficits <cite>CPCB study</cite></li>
+          <li><b>5,556</b> schools · <b>44.9 lakh</b> students in Delhi <cite>UDISE+ 2024-25</cite></li>
+          <li>Nov 2025: outdoor school sports suspended across NCR <cite>CAQM</cite></li>
+          <li>PM2.5 peaks in the morning rush in Indian megacities <cite>EGU 2022</cite></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="compare" id="compare" aria-labelledby="compare-h">
+      <div class="section-head">
+        <p class="eyebrow" data-rise>Before vs after</p>
+        <h2 class="display" id="compare-h" data-split>Same school. Same day.<br><em>About half the dose.</em></h2>
+      </div>
+      <div class="compare-grid">
+        <article class="pane pane-before" data-rise>
+          <h3>Today: blanket bans, or PE at 8 AM</h3>
+          <p>Bans are announced late and city-wide, so kids lose weeks of play. On days without a ban, PE runs
+            in the worst hour of the day.</p>
+          <div class="mini-day"><span class="mini-pe bad">PE 8:05</span></div>
+          <p class="pane-num"><b>184</b> µg/m³ during PE</p>
+        </article>
+        <article class="pane pane-after" data-rise>
+          <h3>With CleanHour: PE moves, nobody loses it</h3>
+          <p>The same period swaps with a classroom lesson later in the day, when the mixing layer has lifted.</p>
+          <div class="mini-day" id="scrubDay"><span class="mini-pe" id="scrubTile">PE <span id="scrubTime">8:05</span></span></div>
+          <p class="pane-num"><b id="scrubPm">184</b> µg/m³ during PE</p>
+        </article>
+      </div>
+      <p class="source">Delhi, 15 Oct–30 Nov 2025: moving an 8 AM outdoor slot to the cleanest hour of the school
+        day cut PM2.5 by 52% on the median day (47 days, CAMS model data).</p>
+    </section>
+
+    <section class="story" id="how" aria-labelledby="how-h">
+      <div class="story-stage" aria-hidden="true">
+        <div class="clock"><span class="clock-time" id="clockTime">5:30</span><span class="clock-ampm">AM</span></div>
+        <div class="progress"><span class="progress-fill" id="progressFill"></span></div>
+        <div class="stage-cards">
+          <div class="stage-card is-active"><b>Forecast</b>PM2.5 for the school's coordinates, hour by hour</div>
+          <div class="stage-card"><b>Optimizer</b>PE finds the cleanest slot the playground and teachers allow</div>
+          <div class="stage-card"><b>Cedar rules</b><code>forbid … when context.pm25 &gt; 120</code></div>
+          <div class="stage-card"><b>Agent</b>Hindi + English notice, written from the plan's facts</div>
+          <div class="stage-card"><b>Approve</b>One tap. GRAP-forced changes auto-apply at 6:45</div>
+          <div class="stage-card"><b>Parents</b>WhatsApp message + Hindi voice note</div>
+        </div>
+      </div>
+      <div class="story-steps">
+        <h2 class="display" id="how-h" data-split>From forecast to parents' phones by <em>6:45 AM.</em></h2>
+        <ol>
+          <li class="step"><span class="step-n">5:30</span><h3>The sky is read</h3><p>EventBridge Scheduler wakes a Step Functions workflow that fetches the hourly PM2.5 forecast for the school's exact location.</p></li>
+          <li class="step"><span class="step-n">5:31</span><h3>The day is re-planned</h3><p>Each outdoor PE period searches for the cleanest slot, respecting playground capacity and teacher clashes. Younger classes pick first.</p></li>
+          <li class="step"><span class="step-n">5:31</span><h3>Every move is checked</h3><p>Cedar policies, the AWS open-source policy language, decide each outdoor slot: GRAP stages, NAQI bands, classes 1–5, asthma-watch kids. The AI never decides who goes outside.</p></li>
+          <li class="step"><span class="step-n">5:32</span><h3>The words are written</h3><p>A Strands agent on Amazon Bedrock turns the plan into a calm Hindi and English notice and a principal brief, citing the rule behind each change.</p></li>
+          <li class="step"><span class="step-n">6:15</span><h3>The principal approves</h3><p>One tap. If nobody responds by the deadline, only the changes GRAP requires are applied, and nothing advisory goes out unapproved.</p></li>
+          <li class="step"><span class="step-n">6:45</span><h3>Parents know before the bus</h3><p>A WhatsApp-ready message for the class group, a Hindi voice note from Amazon Polly, and a parent page with their child's day.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="bento" id="features" aria-labelledby="features-h">
+      <div class="section-head">
+        <p class="eyebrow" data-rise>What it does</p>
+        <h2 class="display" id="features-h" data-split>Built for 6 AM, <em>not for dashboards.</em></h2>
+      </div>
+      <div class="bento-grid">
+        <article class="card c-move loop" data-rise><div class="viz viz-move" aria-hidden="true"><i></i><i></i><span></span></div><h3>Moves, doesn't cancel</h3><p>PE swaps with a classroom lesson into cleaner air. Kids keep their exercise.</p></article>
+        <article class="card c-rules loop" data-rise><div class="viz viz-rules" aria-hidden="true"><code>forbid when pm25 &gt; 120</code><span class="stamp">forbid</span></div><h3>Rules as code</h3><p>Cedar policies, editable per school. Each change cites the rule that caused it.</p></article>
+        <article class="card c-lungs loop" data-rise><div class="viz viz-lungs" aria-hidden="true"><span></span></div><h3>Asthma watch</h3><p>Parents opt their child in; stricter rules keep them in when others can go out.</p></article>
+        <article class="card c-voice loop" data-rise><div class="viz viz-voice" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h3>Hindi voice note</h3><p>For parents who'd rather listen than read. Amazon Polly, neural Hindi.</p></article>
+        <article class="card c-chat loop" data-rise><div class="viz viz-chat" aria-hidden="true"><span></span><span></span><span></span></div><h3>WhatsApp-native</h3><p>Schools already talk to parents in class groups, so CleanHour writes for them.</p></article>
+        <article class="card c-grap loop" data-rise><div class="viz viz-grap" aria-hidden="true"><i>I</i><i>II</i><i>III</i><i>IV</i></div><h3>GRAP-aware</h3><p>Flip the stage and the plan obeys it. Regulatory changes auto-apply.</p></article>
+      </div>
+    </section>
+
+    <section class="toy" id="toy" aria-labelledby="toy-h">
+      <div class="section-head">
+        <p class="eyebrow" data-rise>Try it</p>
+        <h2 class="display" id="toy-h" data-split>Drag the sun. <em>Watch the sky lift.</em></h2>
+        <p class="lede" data-rise>Real hourly PM2.5 for Rohini on 21 Nov 2025. The verdicts use the same thresholds as CleanHour's Cedar policies.</p>
+      </div>
+      <div class="toy-panel">
+        <div class="toy-sky" id="toySky" aria-hidden="true">
+          <svg class="curve" viewBox="0 0 600 200" preserveAspectRatio="none"><path id="curvePath" d=""></path></svg>
+          <div class="toy-haze" id="toyHaze"></div>
+          <div class="sun" id="toySun"></div>
+        </div>
+        <label class="toy-slider">
+          <span class="sr-only">Time of day</span>
+          <input type="range" id="toyTime" min="420" max="900" step="5" value="485">
+        </label>
+        <div class="toy-out" aria-live="polite">
+          <p class="toy-read"><span id="toyClock">8:05 AM</span> · <b id="toyPm">191</b> µg/m³ · <span id="toyBand">Very Poor</span></p>
+          <ul class="verdicts" id="toyVerdicts"></ul>
+        </div>
+        <fieldset class="grap-switch">
+          <legend>GRAP stage in force</legend>
+          <label><input type="radio" name="grap" value="0" checked> None</label>
+          <label><input type="radio" name="grap" value="1"> I</label>
+          <label><input type="radio" name="grap" value="3"> III</label>
+          <label><input type="radio" name="grap" value="4"> IV</label>
+        </fieldset>
+      </div>
+    </section>
+
+    <section class="stats" aria-labelledby="stats-h">
+      <h2 class="sr-only" id="stats-h">The numbers</h2>
+      <div class="stat" data-rise><b data-count="52">52</b><span>% less PM2.5 on the median day by moving an 8 AM slot to the cleanest school hour <cite>Delhi, Oct–Nov 2025, CAMS</cite></span></div>
+      <div class="stat" data-rise><b data-count="33">33</b><span>of 47 smog-season days were "Poor" or worse at 8 AM <cite>Delhi, Oct–Nov 2025, CAMS</cite></span></div>
+      <div class="stat" data-rise><b data-count="44.9" data-decimals="1">44.9</b><span>lakh students in Delhi's 5,556 schools <cite>UDISE+ 2024-25</cite></span></div>
+      <div class="stat" data-rise><b data-count="0">0</b><span>sensors to install. It runs on a free public forecast.</span></div>
+    </section>
+
+    <section class="faq" id="faq" aria-labelledby="faq-h">
+      <h2 class="display" id="faq-h" data-split>Honest <em>answers.</em></h2>
+      <details><summary>Is a forecast accurate enough to plan a school day?</summary><p>CleanHour uses the CAMS model via Open-Meteo. It underestimates absolute peaks compared with ground stations, but it captures the daily shape well, and the shape is what decides which hour is cleanest. The next step is correcting it each morning with CPCB station readings.</p></details>
+      <details><summary>What happens when GRAP Stage III or IV is declared?</summary><p>The stage is an input to the Cedar rules. Stage III suspends outdoor sports and Stage IV keeps every outdoor activity in. These changes are marked regulatory and apply even if the principal doesn't respond.</p></details>
+      <details><summary>Does the AI decide whether children go outside?</summary><p>No. Plain code picks the slots and Cedar policies decide what's allowed. The agent only writes the notices and answers questions, using read-only tools.</p></details>
+      <details><summary>Do schools need to buy air sensors?</summary><p>No. A school needs coordinates and a timetable. That's what lets it reach government schools, not just the few that can afford monitors.</p></details>
+      <details><summary>Which languages does it speak?</summary><p>Hindi and English today, including a Hindi voice note. Because the agent writes from structured facts, adding Punjabi, Urdu or Bengali is a prompt change, not a rewrite.</p></details>
+      <details><summary>What does it cost?</summary><p>[Pricing placeholder] Planned: free for government schools, paid for private schools. The running cost per school is one scheduled workflow and a few model calls a day.</p></details>
+    </section>
+
+    <section class="closing" aria-labelledby="close-h">
+      <div class="closing-haze" aria-hidden="true"></div>
+      <h2 class="display" id="close-h" data-split>Give them <em>the clean hour.</em></h2>
+      <p class="lede" data-rise>Open the live console, replay 21 November 2025, and approve the plan yourself.</p>
+      <div class="cta-row" data-rise>
+        <a class="btn btn-primary" href="console.html?date=2025-11-21">Open the live console</a>
+        <a class="btn btn-ghost" href="https://github.com/let-the-dreamers-rise/envaws/blob/claude/admiring-carson-664i25/docs/idea-and-research.md">Read the research</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <canvas class="footer-motes" aria-hidden="true"></canvas>
+    <div class="footer-inner">
+      <p class="brand"><span class="brand-mark" aria-hidden="true"></span>CleanHour</p>
+      <p>Built on AWS: Amazon Bedrock · Strands Agents · Cedar · Step Functions · Lambda · DynamoDB · Polly · EventBridge Scheduler · Amplify.</p>
+      <p>Air data: Open-Meteo Air Quality API (CAMS). Animation: GSAP (standard no-charge license). Not medical advice.</p>
+      <p><a href="console.html">Principal console</a> · <a href="parent.html">Parent page</a> · <a href="https://github.com/let-the-dreamers-rise/envaws">Source</a></p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js" defer></script>
+  <script src="landing/motion.js" defer></script>
+  <script src="landing/hero.js" defer></script>
+  <script src="landing/story.js" defer></script>
+  <script src="landing/toy.js" defer></script>
+</body>
+</html>
