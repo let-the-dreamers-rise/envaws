@@ -37,6 +37,10 @@ Track: **Air** (with a heat mode that also covers Heat & Water) · Environmental
 | Words | A **Strands agent on Amazon Bedrock** (Nova 2 Lite) writes the principal brief and Hindi + English parent notices from the plan's facts, and answers questions ("Kya 7A ka practice 12 baje ho sakta hai?") using read-only tools | Strands Agents SDK, Bedrock |
 | Approve | Principal gets an email (SNS) with the brief and a link, and approves with one tap. Step Functions waits on a task token. If nobody answers by 6:45, **only GRAP-required changes** apply. Clean-air days auto-publish | SNS, Step Functions `waitForTaskToken`, Choice |
 | Parents | WhatsApp-ready message for the class group, Hindi voice note (Amazon Polly, neural *Kajal*), and a parent page showing their child's day | Polly, S3, Amplify Hosting |
+| Staff & roles | Staff sign in with **Amazon Cognito**. A second **Cedar** policy set (`authz.cedar`) decides authority on every request: principals run and approve their own school, teachers view and ask (with a "Your day" card of their changed periods), district admins onboard schools but never approve | Cognito, API Gateway JWT authorizer, Cedar |
+| During the day | At 9:30 and 11:30 a re-check reads the latest forecast and the current GRAP stage. CleanHour **may make the rest of the day safer on its own** (outdoor → indoor, with a Hindi/English update to parents, staff and the principal) but **never riskier** without a newly approved plan | EventBridge Scheduler, Lambda, SNS |
+| Voice | The principal can ask by voice in Hindi or Hinglish. The answer is spoken by Polly | Browser speech recognition, Amazon Polly |
+| Ops | Every run records its impact as CloudWatch metrics (PE periods moved, asthma-watch kids kept in, dose cut) on an impact dashboard. An alarm fires if the morning workflow fails. CI runs tests and lint on every push | Powertools for AWS Lambda (EMF), CloudWatch, GitHub Actions |
 | Onboarding | A school photographs its timetable. A multimodal Strands agent on Bedrock transcribes it, and code normalises it (Games/PT → PE, "1:05" → 13:05, no fake teacher clashes). The school is live for the next 5:30 AM run | Bedrock (Nova 2 Lite, image input), Strands |
 
 **Design rule (the same one the First Commit winners used): the model writes words, code decides
@@ -52,7 +56,14 @@ template notices are used and the UI says so.
    9:25 AM (feels-like 38 → 33 °C), and keeps classes 1–5 in at recess.
 4. **Approve** → WhatsApp share → voice note → **parent page** (Hindi first).
 5. **Tomorrow / live days**: real forecasts. On clean days CleanHour stays quiet (no alert fatigue).
-6. **+ Add your school**: photograph a timetable and open the new school's console.
+6. **+ Add your school**: photograph a timetable and open the new school's console (district admin only).
+7. **Switch to the PE teacher** (demo login, or "Demo as" locally): "Your day, Mr. Rawat" lists his moved periods,
+   and Approve is replaced by the Cedar reason a teacher can't approve.
+8. **After publishing, raise GRAP to III**: the mid-day re-check moves the rest of the day's PE indoors on its own,
+   and the parent page shows the update in Hindi.
+
+Demo logins after deploy (password printed by `deploy.sh`, default `CleanHour#2026`):
+`principal@demo-rohini.cleanhour.in`, `pe.teacher@demo-rohini.cleanhour.in`, `district.admin@cleanhour.in`.
 
 ## Architecture
 
@@ -65,16 +76,18 @@ EventBridge Scheduler (05:30 IST) ─▶ Lambda (scheduler) ─▶ Step Function
 Amplify Hosting (landing, console, parent page) ─▶ API Gateway HTTP API ─▶ Lambda (API) ─▶ DynamoDB / Step Functions / Bedrock
 ```
 
-**AWS services:** Amplify Hosting, API Gateway (HTTP API), Lambda (×5), Step Functions, EventBridge Scheduler,
-DynamoDB, Amazon Bedrock, Amazon Polly, Amazon SNS, S3, CloudWatch Logs, IAM.
-**AWS open source:** Strands Agents SDK, Cedar, AWS SAM.
+**AWS services:** Amplify Hosting, API Gateway (HTTP API + JWT authorizer), Amazon Cognito, Lambda (×6),
+Step Functions, EventBridge Scheduler, DynamoDB (conditional writes), Amazon Bedrock, Amazon Polly, Amazon SNS, S3,
+CloudWatch (EMF metrics, dashboard, alarm), IAM.
+**AWS open source:** Strands Agents SDK, Cedar (two policy sets: child safety and staff authority), Powertools for
+AWS Lambda, AWS SAM.
 
 ## Run it locally
 
 ```bash
 pip install -r backend/requirements.txt
 LLM_MODE=off python local_server.py      # http://localhost:8080 (template notices, no AWS needed)
-python -m pytest -q backend/tests          # 13 tests: Cedar rules, optimizer constraints, heat, onboarding, API flow
+python -m pytest -q backend/tests          # 16 tests (incl. staff policies, re-check): Cedar rules, optimizer constraints, heat, onboarding, API flow
 ```
 With AWS credentials and Bedrock access, drop `LLM_MODE=off` and the Strands agent writes the notices.
 
@@ -97,7 +110,8 @@ into `config.js`.
 - India's NAQI bands are defined on 24-hour averages. Applying them to hourly forecasts is a planning approximation.
 - Dose estimates use assumed ventilation rates and an indoor/outdoor ratio of 0.8 (see `optimizer.py`).
 - The demo school is fictional. GRAP class ranges change order to order, which is why they live in editable Cedar policies.
-- The demo API has no login. A pilot would add Cognito for principals.
+- Demo accounts and their shared password are public so judges can try every role. A pilot would issue
+  real accounts per school.
 
 ## Repository
 
