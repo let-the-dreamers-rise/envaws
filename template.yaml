@@ -139,6 +139,9 @@ Resources:
             - Effect: Allow
               Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
               Resource: "*"
+            - Effect: Allow
+              Action: [polly:SynthesizeSpeech]
+              Resource: "*"
       Events:
         Staff:
           Type: HttpApi
@@ -201,6 +204,21 @@ Resources:
           Type: ScheduleV2
           Properties:
             ScheduleExpression: cron(30 5 * * ? *)
+            ScheduleExpressionTimezone: Asia/Kolkata
+
+  MiddayRecheckFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: cleanhour.workflow.midday_recheck
+      Timeout: 120
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref Table }
+        - SNSPublishMessagePolicy: { TopicName: !GetAtt PlanReadyTopic.TopicName }
+      Events:
+        Midday:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(30 9,11 * * ? *)
             ScheduleExpressionTimezone: Asia/Kolkata
 
   DailyPlan:

@@ -204,3 +204,8 @@ audio { width: 100%; margin-top: 4px; }
 .staff ul { margin: 4px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--muted); }
 .staff li.moved { color: var(--text); }
 .staff-mine { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; border-top: 0; }
+.btn.mic { padding: 10px 12px; }
+.btn.mic.listening { background: var(--danger); color: #fff; }
+.update { background: #fff4e5; border: 1px solid #f3c27a; color: #5a3200; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 14px; }
+.update .note { color: #7a4a10; }
+@media (prefers-color-scheme: dark) { .update { background: #3a2a12; border-color: #7a5520; color: #ffe2b8; } .update .note { color: #f0c98e; } }

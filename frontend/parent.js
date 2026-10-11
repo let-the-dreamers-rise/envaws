@@ -50,6 +50,7 @@ function render() {
       ${p.heat && p.heat.feels >= 35 ? `<div class="small">${t.heat}: ${t.feels} ${p.heat.feels} °C · ${clock(p.period_index[p.heat.period].start)}</div>` : ""}
       ${p.quiet ? `<div class="small">${t.normal}</div>` : ""}
     </div>
+    ${CHUpdates.banner(p.updates, state.lang)}
     <div class="card">
       <h2>${t.pick}</h2>
       <select id="cls">${classes.map((c) => `<option ${c === state.cls ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>
@@ -57,6 +58,7 @@ function render() {
     <div class="card"><h2>${t.myday}</h2><ul class="myday">${myDay(p, state.cls, t)}</ul></div>
     <div class="card">
       <h2>${t.notice}</h2>
+      ${p.updates && p.updates.length ? `<p class="note">${state.lang === "hi" ? "यह सुबह का संदेश है। ऊपर का अपडेट नया है।" : "This is the morning message. The update above is newer."}</p>` : ""}
       <div class="notice">${esc(state.lang === "hi" ? d.notices.parent_notice_hi : d.notices.parent_notice_en)}</div>
       ${d.has_voice ? `<h2 style="margin-top:14px">${t.listen}</h2><audio controls preload="none" src="${API}/api/public/${SID}/voice/${d.date}"></audio>` : ""}
     </div>`;

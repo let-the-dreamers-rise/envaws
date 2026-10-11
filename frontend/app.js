@@ -121,10 +121,13 @@ async function approve() {
 async function setGrap(stage) {
   try {
     state.school = await api(`/api/schools/${SID}/grap`, { method: "POST", body: { stage: Number(stage) } });
+    if (state.item && state.item.status === "published") return CHUpdates.run(updCtx(), `GRAP ${["none", "I", "II", "III", "IV"][stage]}. `);
     toast(`GRAP stage set to ${["none", "I", "II", "III", "IV"][stage]}. Re-planning…`);
     await runCheck();
   } catch (e) { toast(e.message); }
 }
+
+const updCtx = () => ({ api, toast, can, sid: SID, date: state.date, item: state.item, after: () => selectDay(state.date) });
 
 function renderWho() {
   const me = state.me;
@@ -149,6 +152,7 @@ function render() {
   renderChanges(plan);
   renderApprove(plan);
   CHStaff.render($("staff"), plan, state.me);
+  CHUpdates.render($("updatesCard"), updCtx());
 }
 
 function renderHero(plan) {
@@ -339,12 +343,13 @@ function renderApprove(plan) {
   }
 }
 
-async function ask(question) {
+async function ask(question, spoken = false) {
   if (!state.item || !state.item.plan) { toast("Run the check first."); return; }
   $("answer").innerHTML = '<span class="spin"></span>';
   try {
-    const r = await api(`/api/schools/${SID}/plans/${state.date}/ask`, { method: "POST", body: { question } });
+    const r = await api(`/api/schools/${SID}/plans/${state.date}/ask`, { method: "POST", body: { question, speak: spoken } });
     $("answer").textContent = r.answer || r.error;
+    if (spoken) CHVoice.play(r);
   } catch (e) { $("answer").textContent = e.message; }
   loadLog();
 }
@@ -363,6 +368,7 @@ async function init() {
   $("langEn").addEventListener("click", () => { state.lang = "en"; render(); });
   $("grap").addEventListener("change", (e) => setGrap(e.target.value));
   $("askForm").addEventListener("submit", (e) => { e.preventDefault(); const q = $("askInput").value.trim(); if (q) ask(q); });
+  CHVoice.attach($("askForm"), $("askInput"), ask);
   const suggestions = ["Can 7A do sports practice at 12:30?", "Kya 3A ke asthma wale bachche bahar khel sakte hain?", "Why is assembly indoors today?"];
   $("suggest").innerHTML = suggestions.map((s) => `<button type="button">${esc(s)}</button>`).join("");
   $("suggest").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { $("askInput").value = b.textContent; ask(b.textContent); }));

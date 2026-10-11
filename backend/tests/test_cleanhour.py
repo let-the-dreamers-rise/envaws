@@ -186,3 +186,20 @@ def test_protected_routes_need_a_token_in_aws(local_store, monkeypatch):
     from cleanhour import config
     monkeypatch.setattr(config, "running_in_aws", lambda: True)
     assert call_as("GET", "/api/schools/demo-rohini/audit")[0] == 401
+
+
+def test_midday_recheck_only_tightens(local_store):
+    from cleanhour import service
+    assert service.recheck("demo-rohini", "2025-11-06", "11:00")["checked"] is False, "only published plans"
+    call("POST", "/api/schools/demo-rohini/plans", {"when": "replay"})
+    call("POST", "/api/schools/demo-rohini/plans/2025-11-06/approve", {})
+    assert service.recheck("demo-rohini", "2025-11-06", "11:00")["tightened"] == [], "same air, nothing to do"
+    service.set_grap("demo-rohini", 3)  # CAQM declares Stage III at 11 AM
+    result = service.recheck("demo-rohini", "2025-11-06", "11:00")
+    moved = {(t["class_id"], t["period"]) for t in result["tightened"]}
+    assert moved == {("3A", "P8"), ("4A", "P8"), ("5A", "P7"), ("6A", "P7"), ("7A", "P6"), ("8A", "P6")}
+    service.set_grap("demo-rohini", 1)  # stage lifted: a re-check must not loosen on its own
+    assert service.recheck("demo-rohini", "2025-11-06", "11:00")["tightened"] == []
+    public = service.public_latest("demo-rohini")
+    assert public["plan"]["updates"][0]["at"] == "11:00"
+    assert public["plan"]["timetable_after"]["3A"]["P8"]["indoor_from"] == "PE"

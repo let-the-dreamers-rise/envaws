@@ -97,7 +97,12 @@ def ask(event, user, sid, date):
     question = (_body(event).get("question") or "").strip()
     if not question:
         return 400, {"error": "question is required"}
-    return 200, service.ask(sid, date, question[:500])
+    return 200, service.ask(sid, date, question[:500], speak=bool(_body(event).get("speak")))
+
+
+@route("POST", r"/api/schools/(?P<sid>[\w-]+)/plans/(?P<date>\d{4}-\d{2}-\d{2})/recheck", action="RunPlan")
+def recheck(event, user, sid, date):
+    return 200, service.recheck(sid, date, _body(event).get("at"))
 
 
 @route("GET", r"/api/schools/(?P<sid>[\w-]+)/audit", action="ViewPlan")

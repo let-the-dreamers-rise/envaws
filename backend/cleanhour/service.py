@@ -228,6 +228,59 @@ def publish(sid: str, date: str, auto: bool = False, by: str | None = None, run_
     return plan_view(sid, date)
 
 
+def recheck(sid: str, date: str, at: str | None = None) -> dict:
+    """Mid-day re-check of a published plan against the latest forecast and the current GRAP stage.
+
+    Safety asymmetry: CleanHour may tighten the rest of the day on its own (outdoor -> indoor) and tells
+    everyone, but it never loosens a plan without the principal approving a new one."""
+    item = store.get_plan_item(sid, date)
+    if not item or item.get("status") != "published":
+        return {"checked": False, "reason": "no published plan for this day"}
+    plan, s = item["plan"], school(sid)
+    if at is None or plan["mode"] != "replay":  # only replays may simulate the time of day
+        at = datetime.now(IST).strftime("%H:%M")
+    hours = fc.fetch(s["lat"], s["lon"], date, s.get("calibration"))["hours"]
+    grades = {c["id"]: c["grade"] for c in s["classes"]}
+    tightened = []
+    for cid, row in plan["timetable_after"].items():
+        for pid, cell in row.items():
+            p = plan["period_index"][pid]
+            if cell["subject"] != "PE" or p["start"] <= at:
+                continue
+            pm = fc.period_average(hours, p["start"], p["end"])
+            heat = fc.period_average(hours, p["start"], p["end"], "feels")
+            r = rules.check("PE", pm, s["grap_stage"], cid, grades[cid], feels_like=heat)
+            if not r["allowed"]:
+                en, hi = optimizer.INDOOR_ALTERNATIVE["PE"]
+                row[pid] = {"subject": en, "subject_hi": hi, "teacher": cell["teacher"], "indoor_from": "PE"}
+                tightened.append({"class_id": cid, "period": pid, "pm25": round(pm), "rules": r["rules"],
+                                  "regulatory": r["regulatory"]})
+    result = {"checked": True, "at": at, "grap_stage": s["grap_stage"], "tightened": tightened}
+    if not tightened:
+        store.audit(sid, "recheck", f"{date} {at}: rest of the day still safe")
+        return result
+    idx = plan["period_index"]
+    summary = "; ".join(f"{t['class_id']} PE at {notices.clock_en(idx[t['period']]['start'])} moved indoors"
+                        for t in tightened)
+    why = sorted({rules.explain(r) for t in tightened for r in t["rules"]})
+    summary_hi = "; ".join(f"कक्षा {t['class_id']} का खेल ({notices.clock_hi(idx[t['period']]['start'])}) अब अंदर होगा"
+                           for t in tightened)
+    why_hi = sorted({rules.explain(r, "hi") for t in tightened for r in t["rules"]})
+    plan.setdefault("updates", []).append({"at": at, "summary": summary, "why": why, "summary_hi": summary_hi,
+                                           "why_hi": why_hi, "tightened": tightened})
+    plan["changes"] += [{"type": "indoor", "activity": "PE", "class_id": t["class_id"], "period": t["period"],
+                         "pm25": t["pm25"], "rules": t["rules"], "regulatory": t["regulatory"], "update_at": at}
+                        for t in tightened]
+    store.put_plan_item(sid, date, plan)
+    store.audit(sid, "recheck_tightened", f"{date} {at}: {summary}")
+    if config.TOPIC_ARN:
+        import boto3
+        boto3.client("sns").publish(
+            TopicArn=config.TOPIC_ARN, Subject=f"CleanHour update {at}: {len(tightened)} PE period(s) moved indoors"[:99],
+            Message=f"{summary}.\nWhy: {' '.join(why)}\nThe parent page already shows this update. Nothing was loosened.")
+    return result
+
+
 def plan_view(sid: str, date: str) -> dict:
     item = store.get_plan_item(sid, date)
     if not item:
@@ -237,7 +290,7 @@ def plan_view(sid: str, date: str) -> dict:
             "has_voice": bool(item.get("voice_key")), "plan": item.get("plan")}
 
 
-def ask(sid: str, date: str, question: str) -> dict:
+def ask(sid: str, date: str, question: str, speak: bool = False) -> dict:
     item = store.get_plan_item(sid, date)
     if not item or "plan" not in item:
         raise NotFound(f"no plan for {date}")
@@ -248,7 +301,13 @@ def ask(sid: str, date: str, question: str) -> dict:
     except agent.AgentUnavailable as e:
         return {"answer": None, "error": f"Agent unavailable: {str(e)[:200]}"}
     store.audit(sid, "question", question[:200])
-    return {"answer": answer}
+    audio = None
+    if speak:
+        try:
+            audio = voice.speak(answer)
+        except Exception as e:  # the text answer still stands
+            store.audit(sid, "voice_failed", str(e)[:200])
+    return {"answer": answer, "audio_mp3_base64": audio}
 
 
 def voice_url(sid: str, date: str) -> str:
@@ -272,6 +331,6 @@ def public_latest(sid: str, date: str | None = None) -> dict:
         "has_voice": bool(latest.get("voice_key")),
         "plan": {**{k: plan[k] for k in ("flag", "periods", "changes", "metrics", "timetable_after",
                                         "period_index", "grap_stage", "quiet", "rule_text")},
-                 "heat": plan.get("heat")},
+                 "heat": plan.get("heat"), "updates": plan.get("updates", [])},
         "notices": {k: plan["notices"][k] for k in ("parent_notice_en", "parent_notice_hi")},
     }

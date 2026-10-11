@@ -71,3 +71,18 @@ def scheduled(event, context=None):
         started.append(service.request_plan(s["id"], "today"))
     logger.info("morning run started", extra={"schools": len(started)})
     return {"started": started}
+
+
+@metrics.log_metrics
+def midday_recheck(event, context=None):
+    """Fired at 09:30 and 11:30 IST: re-check the rest of today for every school with a published plan."""
+    date = service.today_ist()
+    for s in store.list_schools():
+        try:
+            result = service.recheck(s["id"], date)
+        except Exception:
+            logger.exception("recheck failed", extra={"school": s["id"]})
+            continue
+        if result.get("tightened"):
+            metrics.add_metric(name="PEPeriodsTightenedMidday", unit=MetricUnit.Count, value=len(result["tightened"]))
+    return {"ok": True}
