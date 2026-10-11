@@ -19,6 +19,7 @@ SITE_URL="https://main.$APP_ID.amplifyapp.com"
 echo "==> Building and deploying the backend stack '$STACK' in $REGION"
 OVERRIDES=("SiteUrl=$SITE_URL")
 [ -n "${PRINCIPAL_EMAIL:-}" ] && OVERRIDES+=("PrincipalEmail=$PRINCIPAL_EMAIL")
+[ -n "${MODEL_ID:-}" ] && OVERRIDES+=("ModelId=$MODEL_ID")
 sam build --template template.yaml
 sam deploy --stack-name "$STACK" --region "$REGION" --capabilities CAPABILITY_IAM \
   --resolve-s3 --no-confirm-changeset --no-fail-on-empty-changeset \

@@ -80,6 +80,7 @@ With AWS credentials and Bedrock access, drop `LLM_MODE=off` and the Strands age
 ```bash
 # Needs AWS CLI v2, SAM CLI, and Bedrock access to Amazon Nova 2 Lite in us-east-1.
 PRINCIPAL_EMAIL=you@example.com ./scripts/deploy.sh   # email is optional
+# MODEL_ID=<bedrock model or inference profile id> overrides the default us.amazon.nova-2-lite-v1:0
 ```
 The script deploys `template.yaml` (SAM), then uploads `frontend/` to Amplify Hosting with the API URL written
 into `config.js`.
