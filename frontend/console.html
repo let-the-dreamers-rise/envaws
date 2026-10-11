@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CleanHour · Principal console</title>
+  <meta name="description" content="CleanHour moves school outdoor time into the cleanest hour of the day.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="logo" href="./"><span class="logo-mark"></span>CleanHour</a>
+      <span class="school-name" id="schoolName">Loading…</span>
+      <span class="spacer"></span>
+      <label class="grap">GRAP stage
+        <select id="grap" aria-label="GRAP stage in force">
+          <option value="0">None</option><option value="1">I</option><option value="2">II</option>
+          <option value="3">III</option><option value="4">IV</option>
+        </select>
+      </label>
+      <a class="btn" id="parentLink" href="parent.html" target="_blank" rel="noopener">Parent page ↗</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <nav class="days" id="days" aria-label="Choose a day"></nav>
+
+    <div class="grid">
+      <div class="stack">
+        <section class="card hero" id="hero"></section>
+
+        <section class="card" id="airCard">
+          <h2>Forecast PM2.5 by period <span style="text-transform:none;letter-spacing:0">(µg/m³)</span></h2>
+          <div class="strip" id="strip"></div>
+          <div class="legend" id="legend"></div>
+          <p class="note" id="forecastSource"></p>
+        </section>
+
+        <section class="card" id="ttCard">
+          <div class="tt-head">
+            <h2>Timetable</h2>
+            <div class="seg" role="group" aria-label="Timetable view">
+              <button id="viewBefore" aria-pressed="false">Before</button>
+              <button id="viewAfter" aria-pressed="true">CleanHour plan</button>
+            </div>
+          </div>
+          <div class="tt-scroll"><table class="tt" id="tt"></table></div>
+          <p class="note">Green: PE outdoors in acceptable air · Red: outdoors in air the rules don't allow · Purple: moved indoors.</p>
+        </section>
+
+        <section class="card" id="changesCard">
+          <h2>What changed and why</h2>
+          <div id="changes"></div>
+        </section>
+      </div>
+
+      <aside class="stack">
+        <section class="card" id="approveCard">
+          <h2>Today's call</h2>
+          <ul class="brief" id="brief"></ul>
+          <div class="tabs" role="group" aria-label="Notice language">
+            <button id="langHi" aria-pressed="true">हिंदी</button>
+            <button id="langEn" aria-pressed="false">English</button>
+          </div>
+          <div class="notice" id="notice"></div>
+          <div class="src" id="noticeSrc"></div>
+          <div class="actions" id="actions"></div>
+        </section>
+
+        <section class="card">
+          <h2>Ask CleanHour</h2>
+          <form class="ask" id="askForm">
+            <input id="askInput" placeholder="Kya 7A ka practice 12 baje ho sakta hai?" autocomplete="off">
+            <button class="btn primary" type="submit">Ask</button>
+          </form>
+          <div class="suggest" id="suggest"></div>
+          <div class="answer" id="answer"></div>
+        </section>
+
+        <section class="card">
+          <h2>Activity log</h2>
+          <ul class="log" id="log"></ul>
+        </section>
+
+        <p class="note">Forecast: Open-Meteo Air Quality API (CAMS model). India NAQI bands are defined on 24-hour
+          averages; CleanHour applies them to hourly forecasts as a planning approximation. Not medical advice.</p>
+      </aside>
+    </div>
+  </main>
+  <div class="toast hidden" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>

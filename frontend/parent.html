@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CleanHour · आज की हवा</title>
+  <meta name="description" content="Today's air and timetable changes at your child's school.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <main class="parent">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span class="logo"><span class="logo-mark"></span>CleanHour</span>
+      <span class="spacer"></span>
+      <div class="tabs" role="group" aria-label="Language" style="margin:0">
+        <button id="hi" aria-pressed="true">हिंदी</button>
+        <button id="en" aria-pressed="false">English</button>
+      </div>
+    </div>
+    <div id="root" class="stack"><div class="card empty"><span class="spin"></span></div></div>
+    <p class="note" style="margin-top:16px" id="foot"></p>
+  </main>
+  <script src="parent.js"></script>
+</body>
+</html>
