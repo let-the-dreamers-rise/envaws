@@ -1,0 +1,73 @@
+{
+ "date": "2025-11-06",
+ "source": "Measured: CPCB Rohini DPCC station, hourly means of 15-minute data (via OpenCity)",
+ "note": "GRAP Stage II was in force; Stage III began on 11 Nov 2025. feels = measured air temperature (cool day).",
+ "hours": [
+  {
+   "time": "06:00",
+   "pm25": 522.0,
+   "pm10": 624.0,
+   "feels": 13.2
+  },
+  {
+   "time": "07:00",
+   "pm25": 505.0,
+   "pm10": 608.0,
+   "feels": 13.8
+  },
+  {
+   "time": "08:00",
+   "pm25": 486.0,
+   "pm10": 628.0,
+   "feels": 16.2
+  },
+  {
+   "time": "09:00",
+   "pm25": 429.0,
+   "pm10": 532.0,
+   "feels": 18.1
+  },
+  {
+   "time": "10:00",
+   "pm25": 324.0,
+   "pm10": 440.0,
+   "feels": 20.8
+  },
+  {
+   "time": "11:00",
+   "pm25": 189.0,
+   "pm10": 305.0,
+   "feels": 22.7
+  },
+  {
+   "time": "12:00",
+   "pm25": 94.0,
+   "pm10": 204.0,
+   "feels": 24.8
+  },
+  {
+   "time": "13:00",
+   "pm25": 85.0,
+   "pm10": 191.0,
+   "feels": 25.3
+  },
+  {
+   "time": "14:00",
+   "pm25": 72.0,
+   "pm10": 169.0,
+   "feels": 25.8
+  },
+  {
+   "time": "15:00",
+   "pm25": 64.0,
+   "pm10": 180.0,
+   "feels": 26.0
+  },
+  {
+   "time": "16:00",
+   "pm25": 61.0,
+   "pm10": 177.0,
+   "feels": 25.2
+  }
+ ]
+}

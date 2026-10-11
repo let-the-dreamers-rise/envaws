@@ -54,6 +54,16 @@ They're all informative, and none of them changes a decision.
 - Schools run **assembly at ~7:30–8:00 AM and PE in early periods**, which is the worst hour of the day.
 
 ### The insight (verified with real data)
+
+> **Update during the build: ground truth from CPCB stations.** The model figures below come from CAMS. We then
+> checked them against measured 15-minute data from CPCB stations (Rohini DPCC, R K Puram DPCC; republished by
+> OpenCity). The daily shape holds, and it's stronger: at Rohini, 15 Oct–30 Nov 2025, PM2.5 averaged **315 at 8 AM
+> vs 167 at 1 PM**, and moving 8 AM PE to the cleanest school hour cut PM2.5 by **57% on the median day** (46–57%
+> across two stations and two seasons). Across winter 2024-25 at Rohini (121 school days), moving PE rescued safe
+> outdoor play on **45 days**; on 52 days nothing was safe. CAMS read **1.2–4× low** against the station, so
+> the product bias-corrects the forecast hour by hour. The demo replay is now **6 Nov 2025, measured: 486 at 8 AM,
+> 85 at 1 PM.**
+
 Delhi PM2.5 has a strong daily cycle: the morning inversion traps smoke, and by midday the
 boundary layer rises and dilutes it. Hourly PM2.5 for central Delhi, **15 Oct–30 Nov 2025**
 (CAMS model via Open-Meteo, computed for this doc):

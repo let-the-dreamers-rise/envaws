@@ -42,13 +42,13 @@
   const lane = document.getElementById("scrubDay");
   const timeEl = document.getElementById("scrubTime");
   const pmEl = document.getElementById("scrubPm");
-  const PERIODS = [[485, 184], [525, 170], [565, 153], [605, 135], [665, 109], [705, 97], [745, 92], [785, 90]];
+  const PERIODS = [[485, 462], [525, 418], [565, 350], [605, 268], [665, 149], [705, 98], [745, 87], [785, 80]];
   const pmAt = (m) => {
     for (let i = 1; i < PERIODS.length; i++) {
       const [m0, v0] = PERIODS[i - 1], [m1, v1] = PERIODS[i];
       if (m <= m1) return v0 + ((v1 - v0) * (m - m0)) / (m1 - m0);
     }
-    return 90;
+    return 80;
   };
   const shortClock = (m) => { const h = Math.floor(m / 60); return `${((h + 11) % 12) + 1}:${String(Math.round(m % 60)).padStart(2, "0")}`; };
   const update = (p) => {

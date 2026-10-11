@@ -19,7 +19,7 @@
     <nav aria-label="Sections">
       <a href="#how">How it works</a><a href="#toy">Try it</a><a href="#faq">FAQ</a>
     </nav>
-    <a class="btn btn-small" href="console.html?date=2025-11-21">Live console</a>
+    <a class="btn btn-small" href="console.html?date=2025-11-06">Live console</a>
   </header>
 
   <main id="main">
@@ -31,13 +31,13 @@
           CleanHour reads the forecast at 5:30 AM, moves every outdoor period into the cleanest hour, checks each
           move against GRAP rules, and tells parents in Hindi, all before the school bus leaves.</p>
         <div class="cta-row" data-rise>
-          <a class="btn btn-primary" href="console.html?date=2025-11-21">Run the live demo</a>
+          <a class="btn btn-primary" href="console.html?date=2025-11-06">Run the live demo</a>
           <a class="btn btn-ghost" href="#how">See how it works</a>
         </div>
         <p class="hindi" lang="hi" data-rise>खेलना बंद नहीं, वक़्त बदलो।</p>
       </div>
 
-      <figure class="day" id="day" aria-label="Animation: on 21 November 2025 in Rohini, Delhi, PE periods move from the smoggy morning (PM2.5 184) to the clear afternoon (PM2.5 90).">
+      <figure class="day" id="day" aria-label="Animation: on 6 November 2025 in Rohini, Delhi, PE periods move from the smoggy morning (measured PM2.5 462) to the clearer afternoon (PM2.5 80).">
         <div class="day-sky" aria-hidden="true">
           <div class="haze haze-a" data-depth="18"></div>
           <div class="haze haze-b" data-depth="34"></div>
@@ -48,8 +48,8 @@
         </div>
         <div class="readout" aria-hidden="true">
           <span class="ro-time">8:05 AM</span>
-          <span class="ro-pm"><b class="ro-num">184</b> µg/m³ PM2.5</span>
-          <span class="ro-band">Very Poor</span>
+          <span class="ro-pm"><b class="ro-num">462</b> µg/m³ PM2.5</span>
+          <span class="ro-band">Severe</span>
         </div>
         <div class="track" aria-hidden="true">
           <span class="tile" style="left:5.6%" data-from="0.056" data-to="0.889">3A · PE</span>
@@ -59,7 +59,7 @@
         <div class="ticks" aria-hidden="true">
           <span style="left:0.00%">7:45</span><span style="left:16.67%">8:45</span><span style="left:33.33%">9:45</span><span style="left:50.00%">10:45</span><span style="left:66.67%">11:45</span><span style="left:83.33%">12:45</span><span style="left:100.00%">1:45</span>
         </div>
-        <figcaption>Real forecast · Rohini, Delhi · 21 Nov 2025 · CAMS via Open-Meteo</figcaption>
+        <figcaption>Measured air · CPCB Rohini station, Delhi · Thu 6 Nov 2025</figcaption>
       </figure>
     </section>
 
@@ -87,7 +87,7 @@
     <section class="compare" id="compare" aria-labelledby="compare-h">
       <div class="section-head">
         <p class="eyebrow" data-rise>Before vs after</p>
-        <h2 class="display" id="compare-h" data-split>Same school. Same day.<br><em>About half the dose.</em></h2>
+        <h2 class="display" id="compare-h" data-split>Same school. Same day.<br><em>Less than half the dose.</em></h2>
       </div>
       <div class="compare-grid">
         <article class="pane pane-before" data-rise>
@@ -95,17 +95,17 @@
           <p>Bans are announced late and city-wide, so kids lose weeks of play. On days without a ban, PE runs
             in the worst hour of the day.</p>
           <div class="mini-day"><span class="mini-pe bad">PE 8:05</span></div>
-          <p class="pane-num"><b>184</b> µg/m³ during PE</p>
+          <p class="pane-num"><b>462</b> µg/m³ during PE</p>
         </article>
         <article class="pane pane-after" data-rise>
           <h3>With CleanHour: PE moves, nobody loses it</h3>
           <p>The same period swaps with a classroom lesson later in the day, when the mixing layer has lifted.</p>
           <div class="mini-day" id="scrubDay"><span class="mini-pe" id="scrubTile">PE <span id="scrubTime">8:05</span></span></div>
-          <p class="pane-num"><b id="scrubPm">184</b> µg/m³ during PE</p>
+          <p class="pane-num"><b id="scrubPm">462</b> µg/m³ during PE</p>
         </article>
       </div>
-      <p class="source">Delhi, 15 Oct–30 Nov 2025: moving an 8 AM outdoor slot to the cleanest hour of the school
-        day cut PM2.5 by 52% on the median day (47 days, CAMS model data).</p>
+      <p class="source">Measured at the CPCB Rohini station, 15 Oct–30 Nov 2025: moving an 8 AM outdoor slot to the
+        cleanest hour of the school day cut PM2.5 by 57% on the median day. Shown: Thursday 6 Nov 2025.</p>
     </section>
 
     <section class="story" id="how" aria-labelledby="how-h">
@@ -153,7 +153,7 @@
       <div class="section-head">
         <p class="eyebrow" data-rise>Try it</p>
         <h2 class="display" id="toy-h" data-split>Drag the sun. <em>Watch the sky lift.</em></h2>
-        <p class="lede" data-rise>Real hourly PM2.5 for Rohini on 21 Nov 2025. The verdicts use the same thresholds as CleanHour's Cedar policies.</p>
+        <p class="lede" data-rise>Measured hourly PM2.5 at the CPCB Rohini station on 6 Nov 2025. The verdicts use the same thresholds as CleanHour's Cedar policies.</p>
       </div>
       <div class="toy-panel">
         <div class="toy-sky" id="toySky" aria-hidden="true">
@@ -166,7 +166,7 @@
           <input type="range" id="toyTime" min="420" max="900" step="5" value="485">
         </label>
         <div class="toy-out" aria-live="polite">
-          <p class="toy-read"><span id="toyClock">8:05 AM</span> · <b id="toyPm">191</b> µg/m³ · <span id="toyBand">Very Poor</span></p>
+          <p class="toy-read"><span id="toyClock">8:05 AM</span> · <b id="toyPm">481</b> µg/m³ · <span id="toyBand">Severe</span></p>
           <ul class="verdicts" id="toyVerdicts"></ul>
         </div>
         <fieldset class="grap-switch">
@@ -181,15 +181,15 @@
 
     <section class="stats" aria-labelledby="stats-h">
       <h2 class="sr-only" id="stats-h">The numbers</h2>
-      <div class="stat" data-rise><b data-count="52">52</b><span>% less PM2.5 on the median day by moving an 8 AM slot to the cleanest school hour <cite>Delhi, Oct–Nov 2025, CAMS</cite></span></div>
-      <div class="stat" data-rise><b data-count="33">33</b><span>of 47 smog-season days were "Poor" or worse at 8 AM <cite>Delhi, Oct–Nov 2025, CAMS</cite></span></div>
+      <div class="stat" data-rise><b data-count="57">57</b><span>% less PM2.5 on the median smog-season day by moving 8 AM PE to the cleanest school hour <cite>CPCB Rohini, 15 Oct–30 Nov 2025</cite></span></div>
+      <div class="stat" data-rise><b data-count="45">45</b><span>winter school days when 8 AM air was unsafe for PE but a later slot was safe, so moving PE rescued it <cite>CPCB Rohini, Oct 2024–Feb 2025, 121 school days</cite></span></div>
       <div class="stat" data-rise><b data-count="44.9" data-decimals="1">44.9</b><span>lakh students in Delhi's 5,556 schools <cite>UDISE+ 2024-25</cite></span></div>
-      <div class="stat" data-rise><b data-count="0">0</b><span>sensors to install. It runs on a free public forecast.</span></div>
+      <div class="stat" data-rise><b data-count="0">0</b><span>sensors to install. A free public forecast, calibrated to CPCB stations.</span></div>
     </section>
 
     <section class="faq" id="faq" aria-labelledby="faq-h">
       <h2 class="display" id="faq-h" data-split>Honest <em>answers.</em></h2>
-      <details><summary>Is a forecast accurate enough to plan a school day?</summary><p>CleanHour uses the CAMS model via Open-Meteo. It underestimates absolute peaks compared with ground stations, but it captures the daily shape well, and the shape is what decides which hour is cleanest. The next step is correcting it each morning with CPCB station readings.</p></details>
+      <details><summary>Is a forecast accurate enough to plan a school day?</summary><p>We checked it against CPCB ground stations. At Rohini the CAMS model read 1.2–1.6× too low in early October 2025 and 2.5–4× too low from late October through November, which would under-protect children. So CleanHour bias-corrects the forecast hour by hour to the school's nearest station. The daily shape holds in the measured data: at Rohini and R K Puram, across two seasons, moving PE to the cleanest school hour cut PM2.5 by 46–57% on the median day.</p></details>
       <details><summary>What happens when GRAP Stage III or IV is declared?</summary><p>The stage is an input to the Cedar rules. Stage III suspends outdoor sports and Stage IV keeps every outdoor activity in. These changes are marked regulatory and apply even if the principal doesn't respond.</p></details>
       <details><summary>Isn't 1 PM too hot for PE?</summary><p>Sometimes, and CleanHour checks. The forecast includes feels-like temperature, and Cedar heat rules (35 °C for classes 1–5, 37 °C for sports, 41 °C for everyone) forbid hot slots. When heat is the problem, PE moves to the coolest allowed hour instead. Replayed on 8 April 2025, Delhi's first heatwave, it pulled 8A's PE from 11:45 to 9:25 AM: feels-like 38 → 33 °C. Same engine, all year.</p></details>
       <details><summary>Does the AI decide whether children go outside?</summary><p>No. Plain code picks the slots and Cedar policies decide what's allowed. The agent only writes the notices and answers questions, using read-only tools.</p></details>
@@ -201,9 +201,9 @@
     <section class="closing" aria-labelledby="close-h">
       <div class="closing-haze" aria-hidden="true"></div>
       <h2 class="display" id="close-h" data-split>Give them <em>the clean hour.</em></h2>
-      <p class="lede" data-rise>Open the live console, replay 21 November 2025, and approve the plan yourself.</p>
+      <p class="lede" data-rise>Open the live console, replay 6 November 2025, and approve the plan yourself.</p>
       <div class="cta-row" data-rise>
-        <a class="btn btn-primary" href="console.html?date=2025-11-21">Open the live console</a>
+        <a class="btn btn-primary" href="console.html?date=2025-11-06">Open the live console</a>
         <a class="btn btn-ghost" href="onboard.html">Add your school with a photo</a>
       </div>
     </section>
@@ -214,7 +214,7 @@
     <div class="footer-inner">
       <p class="brand"><span class="brand-mark" aria-hidden="true"></span>CleanHour</p>
       <p>Built on AWS: Amazon Bedrock · Strands Agents · Cedar · Step Functions · Lambda · DynamoDB · Polly · EventBridge Scheduler · Amplify.</p>
-      <p>Air data: Open-Meteo Air Quality API (CAMS). Animation: GSAP (standard no-charge license). Not medical advice.</p>
+      <p>Air data: CPCB monitoring stations (republished by OpenCity) and Open-Meteo (CAMS, CC BY 4.0). Animation: GSAP (standard no-charge license). Not medical advice.</p>
       <p><a href="console.html">Principal console</a> · <a href="parent.html">Parent page</a> · <a href="onboard.html">Add your school</a> · <a href="https://github.com/let-the-dreamers-rise/envaws">Source</a> · <a href="https://github.com/let-the-dreamers-rise/envaws/blob/claude/admiring-carson-664i25/docs/idea-and-research.md">Research</a></p>
     </div>
   </footer>

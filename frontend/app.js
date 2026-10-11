@@ -1,9 +1,9 @@
 const API = (window.CLEANHOUR_API || "").replace(/\/$/, "");
 const params = new URLSearchParams(location.search);
 const SID = params.get("school") || "demo-rohini";
-const REPLAY = "2025-11-21";
+const REPLAY = "2025-11-06";
 const HEAT_REPLAY = "2025-04-08";
-const REPLAYS = { [REPLAY]: "Smog replay · 21 Nov 2025", [HEAT_REPLAY]: "Heat replay · 8 Apr 2025" };
+const REPLAYS = { [REPLAY]: "Smog replay · 6 Nov 2025", [HEAT_REPLAY]: "Heat replay · 8 Apr 2025" };
 const BANDS = [
   ["Good", "#2e9e4f"], ["Satisfactory", "#8cc43f"], ["Moderate", "#f4c430"],
   ["Poor", "#f08a24"], ["Very Poor", "#d93b3b"], ["Severe", "#7e1f3c"],
@@ -136,7 +136,7 @@ function renderHero(plan) {
   const hero = $("hero");
   if (!plan) {
     const intro = {
-      [REPLAY]: "Replay 21 Nov 2025: the smog week the Supreme Court called outdoor activity a “gas chamber”",
+      [REPLAY]: "Replay 6 Nov 2025, measured air at Rohini: 486 µg/m³ at 8 AM, 85 by 1 PM. GRAP II still allowed PE at 8 AM.",
       [HEAT_REPLAY]: "Replay 8 Apr 2025: Delhi's first heatwave of the year. Same school, same engine.",
     }[state.date];
     hero.innerHTML = `<div class="empty">

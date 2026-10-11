@@ -11,13 +11,13 @@ os.environ["LLM_MODE"] = "off"
 from cleanhour import api, forecast, notices, optimizer, rules  # noqa: E402
 from cleanhour.school import DEMO_SCHOOL  # noqa: E402
 
-REPLAY = forecast._fixture("2025-11-21")
+REPLAY = forecast._fixture("2025-11-06")
 
 
 def plan_for(grap=1, hours=None):
     school = copy.deepcopy(DEMO_SCHOOL)
     school["grap_stage"] = grap
-    return optimizer.build_plan(school, {"hours": hours or REPLAY["hours"], "source": "test"}, "2025-11-21", "replay")
+    return optimizer.build_plan(school, {"hours": hours or REPLAY["hours"], "source": "test"}, "2025-11-06", "replay")
 
 
 def test_cedar_blocks_exertion_in_very_poor_air():
@@ -84,21 +84,21 @@ def local_store(tmp_path, monkeypatch):
     from cleanhour import config, store
     monkeypatch.setattr(config, "LOCAL_DATA_DIR", str(tmp_path))
     monkeypatch.setattr(store, "_backend", None)
-    monkeypatch.setattr(forecast, "fetch", lambda lat, lon, date: REPLAY)
+    monkeypatch.setattr(forecast, "fetch", lambda lat, lon, date, calibration=None: REPLAY)
 
 
 def test_api_plan_approve_publish_flow(local_store):
-    status, body = call("GET", "/api/schools/demo-rohini/plans/2025-11-21")
+    status, body = call("GET", "/api/schools/demo-rohini/plans/2025-11-06")
     assert status == 200 and body["status"] == "none"
     status, body = call("POST", "/api/schools/demo-rohini/plans", {"when": "replay"})
     assert status == 202 and body["status"] == "pending_approval"
     status, body = call("GET", "/api/public/demo-rohini/latest")
     assert body["plan"] is None, "nothing reaches parents before approval"
-    status, body = call("POST", "/api/schools/demo-rohini/plans/2025-11-21/approve", {"by": "test"})
+    status, body = call("POST", "/api/schools/demo-rohini/plans/2025-11-06/approve", {"by": "test"})
     assert status == 200 and body["status"] == "published"
     status, body = call("GET", "/api/public/demo-rohini/latest")
     assert body["plan"]["metrics"]["pe_moved"] == 5
-    status, body = call("POST", "/api/schools/demo-rohini/plans/2025-11-21/approve", {})
+    status, body = call("POST", "/api/schools/demo-rohini/plans/2025-11-06/approve", {})
     assert status == 409
 
 
@@ -141,5 +141,13 @@ def test_onboarding_normalises_a_transcription():
     assert tt["P1"]["subject"] == "PE"
     assert [p["start"] for p in school["periods"]][-1] == "13:00"
     assert set(tt) == {"P1", "P2", "P3", "P4"}
-    plan = optimizer.build_plan(school, REPLAY, "2025-11-21", "replay")
+    plan = optimizer.build_plan(school, REPLAY, "2025-11-06", "replay")
     assert any(c["type"] == "move" for c in plan["changes"])
+
+
+def test_calibration_scales_model_to_station_by_season():
+    hours = [{"time": "08:00", "pm25": 100.0}, {"time": "13:00", "pm25": 50.0}]
+    station = forecast.calibrate(hours, "2026-11-10", DEMO_SCHOOL["calibration"])
+    assert "Rohini" in station and hours[0]["pm25"] == 310.0 and hours[0]["pm25_model"] == 100.0
+    april = [{"time": "08:00", "pm25": 100.0}]
+    assert forecast.calibrate(april, "2026-04-10", DEMO_SCHOOL["calibration"]) is None and april[0]["pm25"] == 100.0

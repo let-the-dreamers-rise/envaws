@@ -10,7 +10,7 @@ from . import forecast as fc
 from .school import DEMO_SCHOOL
 
 IST = timezone(timedelta(hours=5, minutes=30))
-REPLAY_DATE = "2025-11-21"
+REPLAY_DATE = "2025-11-06"
 
 
 class Conflict(Exception):
@@ -93,7 +93,7 @@ def set_grap(sid: str, stage: int) -> dict:
 
 def compute_plan(sid: str, date: str, mode: str, run_id: str | None = None) -> dict:
     s = school(sid)
-    forecast = fc.fetch(s["lat"], s["lon"], date)
+    forecast = fc.fetch(s["lat"], s["lon"], date, s.get("calibration"))
     plan = optimizer.build_plan(s, forecast, date, mode)
     plan["run_id"] = run_id or uuid.uuid4().hex[:12]
     plan["rule_text"] = {r: list(t) for r, t in rules.RULE_TEXT.items()}

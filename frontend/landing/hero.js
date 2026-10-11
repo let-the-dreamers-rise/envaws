@@ -1,5 +1,5 @@
 /* Hero: the transformation. PE tiles caught in morning smog lift out of it and glide to the
-   clean midday periods while the inversion layer rises and the readout falls 184 → 90. */
+   clean midday periods while the inversion layer rises and the readout falls 462 → 80. */
 (() => {
   const day = document.getElementById("day");
   if (!day) return;
@@ -14,8 +14,8 @@
   const roNum = day.querySelector(".ro-num");
   const roBand = day.querySelector(".ro-band");
 
-  // Period start (minutes since midnight) → period-average PM2.5, Rohini, 21 Nov 2025.
-  const PERIODS = [[485, 184], [525, 170], [565, 153], [605, 135], [665, 109], [705, 97], [745, 92], [785, 90]];
+  // Period start (minutes since midnight) → period-average PM2.5 measured at CPCB Rohini, 6 Nov 2025.
+  const PERIODS = [[485, 462], [525, 418], [565, 350], [605, 268], [665, 149], [705, 98], [745, 87], [785, 80]];
   const BANDS = [[30, "Good", "#2e9e4f"], [60, "Satisfactory", "#8cc43f"], [90, "Moderate", "#c9a21a"],
     [120, "Poor", "#f08a24"], [250, "Very Poor", "#d93b3b"], [Infinity, "Severe", "#7e1f3c"]];
   const DAY_START = 465, DAY_LEN = 360; // 7:45 → 13:45

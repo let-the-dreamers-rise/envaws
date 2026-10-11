@@ -51,6 +51,23 @@ DEMO_SCHOOL = {
     "playground_capacity": 2,
     "periods": PERIODS,
     "classes": CLASSES,
+    # Hour-by-hour ratio of measured PM2.5 (CPCB Rohini DPCC) to the CAMS model at this location,
+    # by part of the season. CAMS misses local inversions and stubble smoke, and the gap grows in November.
+    "calibration": {
+        "station": "Rohini DPCC",
+        "windows": [
+            {"from": "10-01", "to": "10-14", "basis": "1-14 Oct 2025",
+             "factors": {"7": 1.35, "8": 1.45, "9": 1.61, "10": 1.59, "11": 1.51, "12": 1.37, "13": 1.23, "14": 1.18}},
+            {"from": "10-15", "to": "10-31", "basis": "15-31 Oct 2025",
+             "factors": {"7": 1.96, "8": 2.25, "9": 2.74, "10": 3.2, "11": 3.25, "12": 2.72, "13": 2.48, "14": 2.02}},
+            {"from": "11-01", "to": "11-30", "basis": "Nov 2025",
+             "factors": {"7": 3.11, "8": 3.1, "9": 3.33, "10": 3.78, "11": 4.07, "12": 3.85, "13": 3.24, "14": 2.79}},
+            {"from": "12-01", "to": "12-31", "basis": "assumed from 16-30 Nov 2025",
+             "factors": {"7": 2.2, "8": 2.25, "9": 2.7, "10": 3.13, "11": 3.36, "12": 3.39, "13": 2.72, "14": 2.32}},
+            {"from": "01-01", "to": "02-29", "basis": "assumed from 16-30 Nov 2025",
+             "factors": {"7": 2.2, "8": 2.25, "9": 2.7, "10": 3.13, "11": 3.36, "12": 3.39, "13": 2.72, "14": 2.32}},
+        ],
+    },
 }
 
 OUTDOOR_SUBJECTS = {"PE": "high"}

@@ -9,7 +9,7 @@ parents in Hindi on WhatsApp, with a voice note, before the school bus leaves.
 
 Track: **Air** (with a heat mode that also covers Heat & Water) · Environmental Hacks, Bharat Builds Tour 2026.
 
-- Live site: `<add after deploy>` · Principal console: `<site>/console.html?date=2025-11-21`
+- Live site: `<add after deploy>` · Principal console: `<site>/console.html?date=2025-11-06`
 - Demo video: `<add YouTube link>`
 - Research and benchmark: [docs/idea-and-research.md](docs/idea-and-research.md) · Design: [docs/design.md](docs/design.md)
 
@@ -18,9 +18,11 @@ Track: **Air** (with a heat mode that also covers Heat & Water) · Environmental
 - Delhi has **5,556 schools and 44.9 lakh students** (UDISE+ 2024-25). **29% of Delhi teens show asthma on
   spirometry and 88% of them were never diagnosed** (Lung India, 2021).
 - Smog-season mornings are the worst hour of the day. A cold inversion traps pollution until the midday
-  mixing layer lifts it. In central Delhi between 15 Oct and 30 Nov 2025, PM2.5 averaged **117 µg/m³ at 8 AM vs
-  57 at 1 PM**. Moving an 8 AM outdoor slot to the cleanest school hour cut PM2.5 by **52% on the median day**
-  (47 days, CAMS model data; our analysis).
+  mixing layer lifts it. **Measured at the CPCB Rohini station, 15 Oct–30 Nov 2025: PM2.5 averaged 315 µg/m³ at
+  8 AM vs 167 at 1 PM.** Moving an 8 AM outdoor slot to the cleanest school hour cut PM2.5 by **57% on the median
+  day** (46–57% across Rohini and R K Puram, 2024 and 2025 seasons; our analysis of CPCB data).
+- Across winter 2024-25 at Rohini (121 school days), 8 AM air was unsafe for PE on 97 days. Moving PE to a later
+  slot made it safe on **45 of those days**. On the other 52 nothing was safe, and CleanHour keeps children in.
 - Schools hold assembly and PE at 7:45–9:30 AM. The only policy tool is a **blanket, city-wide ban**
   (Nov 2025: CAQM suspended outdoor school sports across NCR), which costs children weeks of exercise.
 
@@ -29,7 +31,7 @@ Track: **Air** (with a heat mode that also covers Heat & Water) · Environmental
 | Step | What happens | Built with |
 |---|---|---|
 | 5:30 AM | EventBridge Scheduler starts the `DailyPlan` Step Functions workflow for each school | EventBridge Scheduler, Step Functions |
-| Forecast | Hourly PM2.5/PM10 + feels-like temperature for the school's coordinates | Open-Meteo (CAMS) |
+| Forecast | Hourly PM2.5/PM10 + feels-like temperature for the school's coordinates, **bias-corrected hour by hour to the nearest CPCB station** (the model reads 1.2–4× low in Delhi's smog season) | Open-Meteo (CAMS), CPCB data |
 | Optimizer | Each PE period searches for the cleanest slot (smog) or the coolest allowed slot (heat), respecting playground capacity and teacher clashes. Younger classes pick first | Python, Lambda |
 | Rules | Every outdoor slot is checked by **Cedar** policies: GRAP stages, NAQI bands, classes 1–5, asthma-watch cohorts, heat thresholds. Each change cites the rule that caused it | Cedar (AWS open source) via `cedarpy` |
 | Words | A **Strands agent on Amazon Bedrock** (Nova 2 Lite) writes the principal brief and Hindi + English parent notices from the plan's facts, and answers questions ("Kya 7A ka practice 12 baje ho sakta hai?") using read-only tools | Strands Agents SDK, Bedrock |
@@ -42,8 +44,9 @@ actions.** The LLM has no tool that can change a timetable. If Bedrock is unavai
 template notices are used and the UI says so.
 
 ### Try these in the console
-1. **Smog replay, 21 Nov 2025** (the "gas chamber" week): 5 PE periods move to 11:45–1:05, assembly and recess go
-   indoors, 16 asthma-watch kids stay in. PE air 160 → 93 µg/m³, about 42% less PM2.5 breathed outdoors.
+1. **Smog replay, Thu 6 Nov 2025, measured air at Rohini** (486 µg/m³ at 8 AM, 85 at 1 PM; GRAP II, so PE was
+   allowed): 5 PE periods move to 11:45–1:05, assembly and recess go indoors, asthma-watch kids stay in. PE air
+   368 → 88 µg/m³, about 65% less PM2.5 breathed outdoors.
 2. **Flip GRAP to Stage III**: Cedar forces all PE indoors, marked *regulatory*.
 3. **Heat replay, 8 Apr 2025** (Delhi's first heatwave): the same engine pulls 8A's PE *earlier*, from 11:45 to
    9:25 AM (feels-like 38 → 33 °C), and keeps classes 1–5 in at recess.
@@ -71,7 +74,7 @@ DynamoDB, Amazon Bedrock, Amazon Polly, Amazon SNS, S3, CloudWatch Logs, IAM.
 ```bash
 pip install -r backend/requirements.txt
 LLM_MODE=off python local_server.py      # http://localhost:8080 (template notices, no AWS needed)
-python -m pytest -q backend/tests          # 12 tests: Cedar rules, optimizer constraints, heat, onboarding, API flow
+python -m pytest -q backend/tests          # 13 tests: Cedar rules, optimizer constraints, heat, onboarding, API flow
 ```
 With AWS credentials and Bedrock access, drop `LLM_MODE=off` and the Strands agent writes the notices.
 
@@ -87,9 +90,10 @@ into `config.js`.
 
 ## Honest limitations
 
-- The forecast is the CAMS global model (~40 km grid). It underestimates absolute peaks compared with CPCB
-  ground stations but captures the daily *shape*, and the shape is what picks the cleanest hour. Next step:
-  correct it each morning with the nearest CPCB station reading.
+- The forecast is the CAMS global model (~40 km grid). Checked against CPCB stations it reads 1.2–4× low in
+  Delhi's smog season, so CleanHour applies hour-by-hour correction factors fitted on the nearest station's
+  2025 data (`school.py`). Factors for Dec–Feb are assumed from late November. Next step: a live morning
+  nowcast from the station's latest reading.
 - India's NAQI bands are defined on 24-hour averages. Applying them to hourly forecasts is a planning approximation.
 - Dose estimates use assumed ventilation rates and an indoor/outdoor ratio of 0.8 (see `optimizer.py`).
 - The demo school is fictional. GRAP class ranges change order to order, which is why they live in editable Cedar policies.
@@ -105,6 +109,7 @@ backend/tests/       pytest suite
 frontend/            index.html (landing, GSAP), console.html (principal), parent.html (parents), onboard.html
 template.yaml        SAM: API, Lambdas, Step Functions, Scheduler, DynamoDB, S3, SNS
 scripts/deploy.sh    backend + Amplify Hosting deploy
+analysis/            ground_truth.py: reproduces every CPCB-based number in this README
 docs/                research, benchmark, design directions, submission writeup
 ```
 
@@ -115,7 +120,8 @@ docs/                research, benchmark, design directions, submission writeup
 
 ## Credits and licences
 
-Air quality and weather data: [Open-Meteo](https://open-meteo.com/) (CC BY 4.0), CAMS model. Policy engine:
+Air quality data: CPCB continuous monitoring stations (Rohini DPCC, R K Puram DPCC), republished by
+[OpenCity](https://data.opencity.in/dataset/delhi-hourly-air-quality-reports). Forecasts: [Open-Meteo](https://open-meteo.com/) (CC BY 4.0), CAMS model. Policy engine:
 [Cedar](https://www.cedarpolicy.com/) via [cedarpy](https://github.com/k9securityio/cedar-py) (Apache-2.0). Agents:
 [Strands Agents SDK](https://github.com/strands-agents/sdk-python) (Apache-2.0). Animation: [GSAP](https://gsap.com/)
 (standard no-charge licence). Fonts: Instrument Serif, Inter, Noto Serif Devanagari (SIL OFL).

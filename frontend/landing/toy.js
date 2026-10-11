@@ -9,8 +9,8 @@
   const sun = document.getElementById("toySun");
   const out = { clock: document.getElementById("toyClock"), pm: document.getElementById("toyPm"), band: document.getElementById("toyBand"), list: document.getElementById("toyVerdicts") };
 
-  // Hourly PM2.5, Rohini, Delhi, 21 Nov 2025 (CAMS via Open-Meteo).
-  const HOURS = [[360, 213], [420, 212], [480, 193], [540, 172], [600, 147], [660, 118], [720, 96], [780, 91], [840, 89], [900, 90], [960, 102]];
+  // Hourly PM2.5 measured at the CPCB Rohini DPCC station, Delhi, 6 Nov 2025.
+  const HOURS = [[360, 522], [420, 505], [480, 486], [540, 429], [600, 324], [660, 189], [720, 94], [780, 85], [840, 72], [900, 64], [960, 61]];
   const MIN = 420, MAX = 900;
   const BANDS = [[30, "Good"], [60, "Satisfactory"], [90, "Moderate"], [120, "Poor"], [250, "Very Poor"], [Infinity, "Severe"]];
   const RULES = [
@@ -42,7 +42,7 @@
   // The curve: PM2.5 drawn as the height of the smog across the day.
   const path = document.getElementById("curvePath");
   let d = "M0,200";
-  for (let m = MIN; m <= MAX; m += 10) d += ` L${(((m - MIN) / (MAX - MIN)) * 600).toFixed(1)},${(200 - (pmAt(m) / 240) * 200).toFixed(1)}`;
+  for (let m = MIN; m <= MAX; m += 10) d += ` L${(((m - MIN) / (MAX - MIN)) * 600).toFixed(1)},${(200 - (pmAt(m) / 560) * 200).toFixed(1)}`;
   path.setAttribute("d", d + " L600,200 Z");
 
   const grapValue = () => +document.querySelector('input[name="grap"]:checked').value;

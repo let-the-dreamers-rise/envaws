@@ -47,5 +47,5 @@ aws amplify start-deployment --app-id "$APP_ID" --branch-name main --job-id "$JO
 
 echo
 echo "Site:    $SITE_URL"
-echo "Console: $SITE_URL/console.html?date=2025-11-21"
+echo "Console: $SITE_URL/console.html?date=2025-11-06"
 echo "API:     $API_URL/api/health"

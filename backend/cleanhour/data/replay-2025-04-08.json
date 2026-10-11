@@ -1,54 +1,54 @@
 {
  "date": "2025-04-08",
- "source": "Open-Meteo Air Quality (CAMS) + archive weather API, archived for offline replay",
- "note": "Delhi's first heatwave of 2025. Feels-like = apparent temperature.",
+ "source": "Measured PM2.5: CPCB Rohini DPCC station; feels-like: Open-Meteo archive (apparent temperature)",
+ "note": "Delhi's first heatwave of 2025.",
  "hours": [
   {
    "time": "07:00",
-   "pm25": 67.3,
-   "pm10": 282.2,
+   "pm25": 97.0,
+   "pm10": 250.0,
    "feels": 26
   },
   {
    "time": "08:00",
-   "pm25": 69.4,
-   "pm10": 288.7,
+   "pm25": 77.0,
+   "pm10": 250.0,
    "feels": 28
   },
   {
    "time": "09:00",
-   "pm25": 75.0,
-   "pm10": 339.0,
+   "pm25": 91.0,
+   "pm10": 293.0,
    "feels": 31
   },
   {
    "time": "10:00",
-   "pm25": 80.8,
-   "pm10": 393.9,
+   "pm25": 89.0,
+   "pm10": 293.0,
    "feels": 34
   },
   {
    "time": "11:00",
-   "pm25": 81.0,
-   "pm10": 428.4,
+   "pm25": 90.0,
+   "pm10": 334.0,
    "feels": 37
   },
   {
    "time": "12:00",
-   "pm25": 75.4,
-   "pm10": 433.1,
+   "pm25": 79.0,
+   "pm10": 269.0,
    "feels": 38
   },
   {
    "time": "13:00",
-   "pm25": 71.0,
-   "pm10": 426.5,
+   "pm25": 99.0,
+   "pm10": 301.0,
    "feels": 40
   },
   {
    "time": "14:00",
-   "pm25": 69.8,
-   "pm10": 434.0,
+   "pm25": 85.0,
+   "pm10": 265.0,
    "feels": 40
   }
  ]

@@ -42,9 +42,26 @@ def _feels_like(lat: float, lon: float, date: str) -> dict[str, float]:
         return {}
 
 
-def fetch(lat: float, lon: float, date: str) -> dict:
+def calibrate(hours: list[dict], date: str, calibration: dict | None) -> str | None:
+    """Bias-correct model PM2.5 to the school's nearest CPCB ground station.
+
+    At Rohini, CAMS read 1.2-1.6x lower than the CPCB station in early October 2025 and 2.5-4.8x lower
+    from late October through November. Thresholds are absolute, so uncorrected values under-protect."""
+    window = next((w for w in (calibration or {}).get("windows", []) if w["from"] <= date[5:] <= w["to"]), None)
+    if not window:
+        return None
+    factors = {int(k): v for k, v in window["factors"].items()}
+    for h in hours:
+        hour = int(h["time"][:2])
+        nearest = min(factors, key=lambda k: abs(k - hour))
+        h["pm25_model"] = h["pm25"]
+        h["pm25"] = round(h["pm25"] * factors[nearest], 1)
+    return f"{calibration['station']} ({window['basis']})"
+
+
+def fetch(lat: float, lon: float, date: str, calibration: dict | None = None) -> dict:
     """Return {"date", "source", "hours": [{"time": "HH:MM", "pm25", "pm10", "feels"}]} for one IST day.
-    Archived replay days are served from data/ so demos never depend on the network."""
+    Replay days are measured station data served from data/, so demos never depend on the network."""
     fixture = _fixture(date)
     if fixture:
         return fixture
@@ -68,9 +85,11 @@ def fetch(lat: float, lon: float, date: str) -> dict:
             feels = _feels_like(lat, lon, date)
             for h in hours:
                 h["feels"] = feels.get(h["time"])
+            station = calibrate(hours, date, calibration)
             return {
                 "date": date,
-                "source": "Open-Meteo Air Quality API (CAMS)" + (" + weather forecast" if feels else ""),
+                "source": "Open-Meteo forecast (CAMS)" + (f", bias-corrected to CPCB {station}" if station else "")
+                          + (" + feels-like temperature" if feels else ""),
                 "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "hours": hours,
             }

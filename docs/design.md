@@ -7,7 +7,7 @@ dirtiest hours of the day (8 AM PM2.5 ≈ 2× the 1 PM level in Delhi's smog sea
 policy tool is a blanket ban. CleanHour turns the same school day into one where every outdoor
 period sits in the cleanest air, and nobody loses play. The hero shows this happening: PE tiles
 caught in thick morning haze lift out of it and glide to the clear midday slots while the PM2.5
-readout falls from 184 to 90 (real forecast, Rohini, 21 Nov 2025).
+readout falls from 462 to 80 (measured at the CPCB Rohini station, 6 Nov 2025).
 
 **Metaphor: the lifting sky.** This is the actual physics behind the product. On a smog morning a
 cold inversion layer presses the pollution down onto the city. As the sun heats the ground, the
@@ -45,7 +45,7 @@ Nothing snaps, bounces or shakes. Smog doesn't bounce.
 - **Storyboard:**
   | Section | What moves | Trigger | What it shows |
   |---|---|---|---|
-  | Hero | Headline lines rise out of a mask; haze lifts; PE tiles float from 8:05 to 1:05; PM2.5 counts 184→90; haze layers follow the cursor in depth | load, loop, cursor | The transformation itself |
+  | Hero | Headline lines rise out of a mask; haze lifts; PE tiles float from 8:05 to 1:05; PM2.5 counts 462→80; haze layers follow the cursor in depth | load, loop, cursor | The transformation itself |
   | Evidence marquee | Cited facts drift sideways; pauses on hover/offscreen | loop, hover | Why this matters (sourced, no fake logos) |
   | Before / after | PE tile travels across the day as you scroll; PM2.5 and band scrub with it | scrub | Same school, same day, about half the dose |
   | How it works (pinned) | Stage swaps 5:30 → 6:45 AM; clock hand and progress line scrub | pin + scrub | Forecast → optimizer → Cedar → agent → approve → WhatsApp |
