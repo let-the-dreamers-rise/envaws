@@ -25,8 +25,29 @@ def _fixture(date: str) -> dict | None:
     return data
 
 
+WEATHER_API = "https://api.open-meteo.com/v1/forecast"
+
+
+def _feels_like(lat: float, lon: float, date: str) -> dict[str, float]:
+    """Hourly apparent temperature (°C) for the day; empty if the weather API is unavailable."""
+    query = urllib.parse.urlencode({
+        "latitude": lat, "longitude": lon, "hourly": "apparent_temperature",
+        "start_date": date, "end_date": date, "timezone": "Asia/Kolkata",
+    })
+    try:
+        with urllib.request.urlopen(f"{WEATHER_API}?{query}", timeout=10) as resp:
+            hourly = json.load(resp)["hourly"]
+        return {t[11:16]: v for t, v in zip(hourly["time"], hourly["apparent_temperature"]) if v is not None}
+    except Exception:
+        return {}
+
+
 def fetch(lat: float, lon: float, date: str) -> dict:
-    """Return {"date", "source", "hours": [{"time": "HH:MM", "pm25", "pm10"}]} for one IST day."""
+    """Return {"date", "source", "hours": [{"time": "HH:MM", "pm25", "pm10", "feels"}]} for one IST day.
+    Archived replay days are served from data/ so demos never depend on the network."""
+    fixture = _fixture(date)
+    if fixture:
+        return fixture
     query = urllib.parse.urlencode({
         "latitude": lat, "longitude": lon, "hourly": "pm2_5,pm10",
         "start_date": date, "end_date": date, "timezone": "Asia/Kolkata",
@@ -44,18 +65,18 @@ def fetch(lat: float, lon: float, date: str) -> dict:
             ]
             if len(hours) < 20:
                 raise ForecastUnavailable(f"only {len(hours)} hours returned for {date}")
+            feels = _feels_like(lat, lon, date)
+            for h in hours:
+                h["feels"] = feels.get(h["time"])
             return {
                 "date": date,
-                "source": "Open-Meteo Air Quality API (CAMS)",
+                "source": "Open-Meteo Air Quality API (CAMS)" + (" + weather forecast" if feels else ""),
                 "fetched_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "hours": hours,
             }
         except Exception as e:  # network, HTTP, or shape errors
             last_error = e
             time.sleep(1.5 * (attempt + 1))
-    fixture = _fixture(date)
-    if fixture:
-        return fixture
     raise ForecastUnavailable(f"forecast for {date} unavailable: {last_error}")
 
 
@@ -64,9 +85,11 @@ def _minutes(hhmm: str) -> int:
     return int(h) * 60 + int(m)
 
 
-def at_minute(hours: list[dict], minute: float, key: str = "pm25") -> float:
+def at_minute(hours: list[dict], minute: float, key: str = "pm25") -> float | None:
     """Linear interpolation between hourly values (values are treated as on-the-hour)."""
-    points = [(_minutes(h["time"]), h[key]) for h in hours]
+    points = [(_minutes(h["time"]), h[key]) for h in hours if h.get(key) is not None]
+    if not points:
+        return None
     if minute <= points[0][0]:
         return points[0][1]
     for (m0, v0), (m1, v1) in zip(points, points[1:]):
@@ -75,7 +98,9 @@ def at_minute(hours: list[dict], minute: float, key: str = "pm25") -> float:
     return points[-1][1]
 
 
-def period_average(hours: list[dict], start: str, end: str) -> float:
+def period_average(hours: list[dict], start: str, end: str, key: str = "pm25") -> float | None:
     a, b = _minutes(start), _minutes(end)
-    samples = [at_minute(hours, m) for m in range(a, b + 1, 5)]
+    samples = [at_minute(hours, m, key) for m in range(a, b + 1, 5)]
+    if samples[0] is None:
+        return None
     return sum(samples) / len(samples)

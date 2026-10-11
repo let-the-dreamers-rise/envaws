@@ -7,8 +7,12 @@ from . import service, store
 
 
 def plan_task(event, context=None):
-    service.compute_plan(event["school_id"], event["date"], event["mode"], run_id=event["run_id"])
-    return event
+    plan = service.compute_plan(event["school_id"], event["date"], event["mode"], run_id=event["run_id"])
+    try:
+        service.notify_principal(event["school_id"], event["date"], plan)
+    except Exception as e:  # a failed email must not block the plan
+        store.audit(event["school_id"], "notify_failed", str(e)[:200])
+    return {**event, "quiet": plan["quiet"]}
 
 
 def wait_task(event, context=None):
@@ -17,8 +21,10 @@ def wait_task(event, context=None):
 
 
 def publish_task(event, context=None):
-    service.publish(event["school_id"], event["date"], auto=bool(event.get("auto")),
-                    by=(event.get("approval") or {}).get("approved_by"), run_id=event["run_id"])
+    by = (event.get("approval") or {}).get("approved_by")
+    if event.get("quiet"):
+        by = "auto: normal day, nothing to change"
+    service.publish(event["school_id"], event["date"], auto=bool(event.get("auto")), by=by, run_id=event["run_id"])
     return {"ok": True}
 
 

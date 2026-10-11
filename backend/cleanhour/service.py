@@ -25,9 +25,14 @@ def today_ist() -> str:
     return datetime.now(IST).date().isoformat()
 
 
+HEAT_REPLAY_DATE = "2025-04-08"
+
+
 def resolve(when: str) -> tuple[str, str]:
     if when == "replay":
         return REPLAY_DATE, "replay"
+    if when in (REPLAY_DATE, HEAT_REPLAY_DATE):
+        return when, "replay"
     if when == "tomorrow":
         return (datetime.now(IST).date() + timedelta(days=1)).isoformat(), "live"
     if when == "today":
@@ -83,7 +88,9 @@ def request_plan(sid: str, when: str) -> dict:
     date, mode = resolve(when)
     school(sid)
     if not config.STATE_MACHINE_ARN:
-        compute_plan(sid, date, mode)
+        plan = compute_plan(sid, date, mode)
+        if plan["quiet"]:
+            publish(sid, date, by="auto: normal day, nothing to change")
         return plan_view(sid, date)
     import boto3
     sfn = boto3.client("stepfunctions")
@@ -101,6 +108,32 @@ def request_plan(sid: str, when: str) -> dict:
                         task_token=None)
     store.audit(sid, "plan_requested", f"{date} ({mode}) via Step Functions")
     return {"status": "planning", "date": date, "run_id": run_id}
+
+
+def notify_principal(sid: str, date: str, plan: dict) -> bool:
+    """Email the principal (SNS topic subscription) that today's plan is ready."""
+    if not config.TOPIC_ARN:
+        return False
+    s = school(sid)
+    f = plan["flag"]
+    if plan["quiet"]:
+        subject = f"CleanHour: {f['en']} air on {date} - normal timetable, nothing to approve"
+    else:
+        n = len(plan["changes"])
+        subject = f"CleanHour: {f['en']} air on {date} - {n} change{'s' if n != 1 else ''} need your approval"
+    link = f"{config.SITE_URL}/console.html?school={sid}&date={date}" if config.SITE_URL else "(open the CleanHour console)"
+    lines = [f"Good morning. CleanHour's plan for {s['name']}, {date}:", ""]
+    lines += [f"- {b}" for b in plan["notices"]["principal_brief_en"]]
+    if not plan["quiet"]:
+        lines += ["", f"Review and approve: {link}"]
+        if plan["regulatory"]:
+            lines += ["Changes required by GRAP apply automatically at the deadline if you don't respond."]
+        else:
+            lines += ["Nothing goes to parents until you approve."]
+    import boto3
+    boto3.client("sns").publish(TopicArn=config.TOPIC_ARN, Subject=subject[:99], Message="\n".join(lines))
+    store.audit(sid, "principal_notified", subject)
+    return True
 
 
 def register_token(sid: str, date: str, run_id: str, token: str):
@@ -194,7 +227,8 @@ def public_latest(sid: str, date: str | None = None) -> dict:
         "school": {"id": s["id"], "name": s["name"], "name_hi": s.get("name_hi")},
         "date": plan["date"], "mode": plan["mode"], "published_at": latest.get("published_at"),
         "has_voice": bool(latest.get("voice_key")),
-        "plan": {k: plan[k] for k in ("flag", "periods", "changes", "metrics", "timetable_after",
-                                     "period_index", "grap_stage", "quiet", "rule_text")},
+        "plan": {**{k: plan[k] for k in ("flag", "periods", "changes", "metrics", "timetable_after",
+                                        "period_index", "grap_stage", "quiet", "rule_text")},
+                 "heat": plan.get("heat")},
         "notices": {k: plan["notices"][k] for k in ("parent_notice_en", "parent_notice_hi")},
     }

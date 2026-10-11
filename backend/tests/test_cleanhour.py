@@ -100,3 +100,20 @@ def test_api_plan_approve_publish_flow(local_store):
     assert body["plan"]["metrics"]["pe_moved"] == 5
     status, body = call("POST", "/api/schools/demo-rohini/plans/2025-11-21/approve", {})
     assert status == 409
+
+
+def test_heat_day_pulls_pe_earlier():
+    heat = forecast._fixture("2025-04-08")
+    school = copy.deepcopy(DEMO_SCHOOL)
+    plan = optimizer.build_plan(school, heat, "2025-04-08", "replay")
+    moves = [c for c in plan["changes"] if c["type"] == "move"]
+    assert len(moves) == 1 and moves[0]["driver"] == "heat"
+    assert moves[0]["class_id"] == "8A" and moves[0]["feels_to"] <= moves[0]["feels_from"] - 3
+    assert plan["period_index"][moves[0]["to"]]["start"] < plan["period_index"][moves[0]["from"]]["start"]
+
+
+def test_cedar_heat_rules():
+    assert not rules.check("PE", 50, 0, "8A", 8, feels_like=38)["allowed"]
+    assert rules.check("PE", 50, 0, "8A", 8, feels_like=33)["allowed"]
+    assert not rules.check("Recess", 50, 0, "3A", 3, feels_like=36)["allowed"]
+    assert rules.check("PE", 50, 0, "8A", 8)["allowed"], "unknown heat never blocks"

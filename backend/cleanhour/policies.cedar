@@ -30,5 +30,18 @@ when { context.pm25 > 90 && resource.kind == "assembly" };
 forbid(principal in Group::"asthma_watch", action == Action::"ScheduleOutdoor", resource)
 when { context.pm25 > 90 };
 
+// context.feels_like is the forecast apparent temperature (°C, rounded); 0 when unknown.
+@id("heat_severe")
+forbid(principal, action == Action::"ScheduleOutdoor", resource)
+when { context.feels_like >= 41 };
+
+@id("heat_exertion")
+forbid(principal, action == Action::"ScheduleOutdoor", resource)
+when { context.feels_like >= 37 && resource.exertion == "high" };
+
+@id("heat_primary")
+forbid(principal in Group::"primary", action == Action::"ScheduleOutdoor", resource)
+when { context.feels_like >= 35 && resource.exertion != "low" };
+
 @id("default_allow")
 permit(principal, action == Action::"ScheduleOutdoor", resource);

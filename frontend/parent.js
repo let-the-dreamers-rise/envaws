@@ -12,11 +12,13 @@ const T = {
   hi: { today: "आज की हवा", worst: "सबसे खराब", at: "पर", pick: "आपके बच्चे की कक्षा", myday: "आज आपके बच्चे का दिन",
         notice: "स्कूल का संदेश", listen: "हिंदी में सुनें", none: "आज का अपडेट अभी तैयार हो रहा है। सुबह 6:45 तक देखें।",
         out: "बाहर", in: "अंदर", moved: "खेल का समय बदला", asthma: "अस्थमा सूची वाले बच्चे अंदर रहेंगे", assembly: "प्रार्थना सभा",
-        recess: "रिसेस", pe: "खेल (पीटी)", indoorPE: "इनडोर पीटी (योग)", normal: "समय-सारणी सामान्य है", cleaner: "हवा साफ़" },
+        recess: "रिसेस", pe: "खेल (पीटी)", indoorPE: "इनडोर पीटी (योग)", normal: "समय-सारणी सामान्य है", cleaner: "हवा साफ़",
+        heat: "गर्मी", feels: "महसूस", cooler: "ठंडे समय पर" },
   en: { today: "Today's air", worst: "Worst", at: "at", pick: "Your child's class", myday: "Your child's day",
         notice: "Message from school", listen: "Listen in Hindi", none: "Today's update is being prepared. Check back by 6:45 AM.",
         out: "outdoors", in: "indoors", moved: "PE time changed", asthma: "Asthma-watch children stay indoors", assembly: "Assembly",
-        recess: "Recess", pe: "PE", indoorPE: "Indoor PE (yoga)", normal: "Normal timetable", cleaner: "cleaner air" },
+        recess: "Recess", pe: "PE", indoorPE: "Indoor PE (yoga)", normal: "Normal timetable", cleaner: "cleaner air",
+        heat: "Heat", feels: "feels like", cooler: "cooler hour" },
 };
 
 function clock(hhmm) {
@@ -45,6 +47,7 @@ function render() {
       <div class="mid">${esc(schoolName)} · ${esc(dateText)}</div>
       <div class="big">${t.today}: ${esc(state.lang === "hi" ? f.hi : f.en)}</div>
       <div class="mid">${t.worst} PM2.5 ${f.pm25} ${t.at} ${clock(p.period_index[f.period].start)}</div>
+      ${p.heat && p.heat.feels >= 35 ? `<div class="small">${t.heat}: ${t.feels} ${p.heat.feels} °C · ${clock(p.period_index[p.heat.period].start)}</div>` : ""}
       ${p.quiet ? `<div class="small">${t.normal}</div>` : ""}
     </div>
     <div class="card">
@@ -78,7 +81,8 @@ function myDay(p, cid, t) {
     if (cell.subject === "PE") {
       const move = p.changes.find((c) => c.type === "move" && c.class_id === cid);
       let text = `${t.pe} · ${t.out}`;
-      if (move) text += ` (${t.moved}: ${clock(p.period_index[move.from].start)} → ${clock(per.start)}, ${move.gain_pct}% ${t.cleaner})`;
+      if (move && move.driver === "heat") text += ` (${t.moved}, ${t.cooler}: ${clock(p.period_index[move.from].start)} → ${clock(per.start)}, ${move.feels_from} → ${move.feels_to} °C)`;
+      else if (move) text += ` (${t.moved}: ${clock(p.period_index[move.from].start)} → ${clock(per.start)}, ${move.gain_pct}% ${t.cleaner})`;
       if (asthma) text += ` · ${t.asthma}`;
       items.push([per.start, text, move ? "moved" : ""]);
     } else if (cell.indoor_from) {

@@ -29,6 +29,12 @@ RULE_TEXT = {
                               "प्रार्थना सभा के समय खराब हवा: सभा अंदर होगी"),
     "poor_asthma_watch": ("Poor air (PM2.5 above 90): asthma-watch students stay indoors",
                           "खराब हवा: अस्थमा वाले बच्चे अंदर रहेंगे"),
+    "heat_severe": ("Dangerous heat (feels like 41 °C or more): everyone stays indoors",
+                    "खतरनाक गर्मी (41 °C या ज़्यादा महसूस): सभी अंदर रहेंगे"),
+    "heat_exertion": ("Heat (feels like 37 °C or more): no outdoor sports",
+                      "गर्मी (37 °C या ज़्यादा महसूस): बाहर खेल नहीं"),
+    "heat_primary": ("Heat (feels like 35 °C or more): classes 1-5 stay out of the sun",
+                     "गर्मी (35 °C या ज़्यादा महसूस): कक्षा 1-5 धूप में नहीं"),
 }
 
 REGULATORY = {"grap4_all_outdoor", "grap3_outdoor_sports"}
@@ -62,7 +68,7 @@ def _entities(class_id: str | None, grade: int | None, cohort: bool) -> list[dic
 
 
 def check(activity: str, pm25: float, grap_stage: int, class_id: str | None = None,
-          grade: int | None = None, asthma_cohort: bool = False) -> dict:
+          grade: int | None = None, asthma_cohort: bool = False, feels_like: float | None = None) -> dict:
     """Can this group do this activity outdoors at this PM2.5? Returns decision + rule ids."""
     text, ids = _policies()
     if class_id is None:
@@ -73,7 +79,8 @@ def check(activity: str, pm25: float, grap_stage: int, class_id: str | None = No
         "principal": principal,
         "action": 'Action::"ScheduleOutdoor"',
         "resource": f'Activity::"{activity}"',
-        "context": {"pm25": int(round(pm25)), "grap_stage": int(grap_stage)},
+        "context": {"pm25": int(round(pm25)), "grap_stage": int(grap_stage),
+                    "feels_like": int(round(feels_like)) if feels_like is not None else 0},
     }
     result = cedarpy.is_authorized(request, text, _entities(class_id, grade, asthma_cohort))
     if result.diagnostics.errors:

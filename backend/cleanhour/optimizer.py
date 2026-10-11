@@ -14,6 +14,7 @@ from .school import OUTDOOR_SUBJECTS
 VENTILATION = {"low": 0.008, "moderate": 0.015, "high": 0.025}
 INDOOR_RATIO = 0.8
 MIN_GAIN = 0.2      # move PE only if the new slot is at least 20% cleaner
+MIN_COOLER = 3      # ...or, when heat is the problem, at least 3 °C cooler (feels-like)
 QUIET_BELOW = 60    # Satisfactory or better: leave the timetable alone
 
 INDOOR_ALTERNATIVE = {
@@ -34,11 +35,13 @@ def build_plan(school: dict, forecast: dict, date: str, mode: str) -> dict:
     capacity = int(school.get("playground_capacity", 2))
     classes = {c["id"]: c for c in school["classes"]}
 
-    pm, periods = {}, []
+    pm, feels, periods = {}, {}, []
     for p in school["periods"]:
         value = fc.period_average(hours, p["start"], p["end"])
-        pm[p["id"]] = value
-        periods.append({**p, "pm25": round(value), "band": aqi.band(value), "minutes": _minutes(p)})
+        heat = fc.period_average(hours, p["start"], p["end"], "feels")
+        pm[p["id"]], feels[p["id"]] = value, heat
+        periods.append({**p, "pm25": round(value), "band": aqi.band(value), "minutes": _minutes(p),
+                        "feels": round(heat) if heat is not None else None})
     by_id = {p["id"]: p for p in periods}
     teaching = [p["id"] for p in periods if p["kind"] == "teaching"]
 
@@ -54,16 +57,17 @@ def build_plan(school: dict, forecast: dict, date: str, mode: str) -> dict:
         if p["kind"] not in ("assembly", "recess"):
             continue
         activity = "Assembly" if p["kind"] == "assembly" else "Recess"
-        whole = rules.check(activity, pm[p["id"]], grap)
+        whole = rules.check(activity, pm[p["id"]], grap, feels_like=feels[p["id"]])
         if not whole["allowed"]:
             changes.append({"type": "venue", "activity": activity, "scope": "all", "period": p["id"],
                             "pm25": p["pm25"], "rules": whole["rules"], "regulatory": whole["regulatory"],
                             "alternative": INDOOR_ALTERNATIVE[activity]})
             continue
         blocked = [cid for cid, c in classes.items()
-                   if not rules.check(activity, pm[p["id"]], grap, cid, c["grade"])["allowed"]]
+                   if not rules.check(activity, pm[p["id"]], grap, cid, c["grade"], feels_like=feels[p["id"]])["allowed"]]
         if blocked:
-            r = rules.check(activity, pm[p["id"]], grap, blocked[0], classes[blocked[0]]["grade"])
+            r = rules.check(activity, pm[p["id"]], grap, blocked[0], classes[blocked[0]]["grade"],
+                            feels_like=feels[p["id"]])
             changes.append({"type": "venue", "activity": activity, "scope": blocked, "period": p["id"],
                             "pm25": p["pm25"], "rules": r["rules"], "regulatory": r["regulatory"],
                             "alternative": INDOOR_ALTERNATIVE[activity]})
@@ -75,18 +79,24 @@ def build_plan(school: dict, forecast: dict, date: str, mode: str) -> dict:
     for cid, pid in pe_slots:
         grade = classes[cid]["grade"]
         current = pm[pid]
-        here = rules.check("PE", current, grap, cid, grade)
+        here = rules.check("PE", current, grap, cid, grade, feels_like=feels[pid])
         if here["allowed"] and current <= QUIET_BELOW:
             continue
+        # What makes this slot bad decides what "better" means: cleaner air, or cooler air.
+        driver = "heat" if any(r.startswith("heat") for r in here["rules"]) else "air"
+        if driver == "heat":
+            key, good_enough = feels.get, lambda q: feels[q] <= feels[pid] - MIN_COOLER
+        else:
+            key, good_enough = pm.get, lambda q: pm[q] <= current * (1 - MIN_GAIN)
         pe_teacher = after[cid][pid]["teacher"]
         skipped, moved = [], False
-        for q in sorted((q for q in teaching if q != pid), key=pm.get):
-            if pm[q] > current * (1 - MIN_GAIN):
+        for q in sorted((q for q in teaching if q != pid), key=key):
+            if not good_enough(q):
                 break
             other = after[cid][q]
             if other["subject"] in OUTDOOR_SUBJECTS:
                 continue
-            there = rules.check("PE", pm[q], grap, cid, grade)
+            there = rules.check("PE", pm[q], grap, cid, grade, feels_like=feels[q])
             if not there["allowed"]:
                 skipped.append({"period": q, "why": "rule", "rules": there["rules"]})
                 continue
@@ -111,8 +121,9 @@ def build_plan(school: dict, forecast: dict, date: str, mode: str) -> dict:
             ground[pid] -= 1
             ground[q] += 1
             changes.append({"type": "move", "activity": "PE", "class_id": cid, "from": pid, "to": q,
-                            "pm25_from": round(current), "pm25_to": round(pm[q]),
+                            "driver": driver, "pm25_from": round(current), "pm25_to": round(pm[q]),
                             "gain_pct": round((1 - pm[q] / current) * 100),
+                            "feels_from": _r(feels[pid]), "feels_to": _r(feels[q]),
                             "rules": here["rules"], "regulatory": here["regulatory"],
                             "swapped": {"subject": other["subject"], "teacher": other["teacher"]},
                             "skipped": skipped})
@@ -123,7 +134,7 @@ def build_plan(school: dict, forecast: dict, date: str, mode: str) -> dict:
             after[cid][pid] = {"subject": name_en, "subject_hi": name_hi, "teacher": pe_teacher,
                                "indoor_from": "PE"}
             ground[pid] -= 1
-            changes.append({"type": "indoor", "activity": "PE", "class_id": cid, "period": pid,
+            changes.append({"type": "indoor", "activity": "PE", "class_id": cid, "period": pid, "driver": driver,
                             "pm25": round(current), "rules": here["rules"], "regulatory": here["regulatory"],
                             "skipped": skipped})
 
@@ -132,14 +143,22 @@ def build_plan(school: dict, forecast: dict, date: str, mode: str) -> dict:
         count = classes[cid].get("asthma_watch", 0)
         for pid, cell in tt.items():
             if cell["subject"] in OUTDOOR_SUBJECTS and count:
-                r = rules.check("PE", pm[pid], grap, cid, classes[cid]["grade"], asthma_cohort=True)
+                r = rules.check("PE", pm[pid], grap, cid, classes[cid]["grade"], asthma_cohort=True,
+                                feels_like=feels[pid])
                 if not r["allowed"]:
                     changes.append({"type": "asthma", "activity": "PE", "class_id": cid, "period": pid,
                                     "count": count, "pm25": round(pm[pid]), "rules": r["rules"],
                                     "regulatory": r["regulatory"]})
 
     metrics = _metrics(school, periods, pm, before, after, changes)
+    pe_feels = lambda tt: [feels[pid] for t in tt.values() for pid, c in t.items()
+                           if c["subject"] in OUTDOOR_SUBJECTS and feels[pid] is not None]
+    if pe_feels(before):
+        metrics["pe_feels_before"] = round(max(pe_feels(before)))
+        metrics["pe_feels_after"] = round(max(pe_feels(after))) if pe_feels(after) else None
+    metrics["heat_moves"] = sum(1 for c in changes if c.get("driver") == "heat")
     worst = max((p for p in periods), key=lambda p: p["pm25"])
+    hottest = max((p for p in periods if p["feels"] is not None), key=lambda p: p["feels"], default=None)
     return {
         "school_id": school["id"],
         "date": date,
@@ -149,6 +168,7 @@ def build_plan(school: dict, forecast: dict, date: str, mode: str) -> dict:
         "forecast": {"source": forecast.get("source"), "hours": hours},
         "periods": periods,
         "flag": {**aqi.band(worst["pm25"]), "pm25": worst["pm25"], "period": worst["id"]},
+        "heat": {"feels": hottest["feels"], "period": hottest["id"]} if hottest else None,
         "timetable_before": before,
         "timetable_after": after,
         "changes": changes,
@@ -158,6 +178,10 @@ def build_plan(school: dict, forecast: dict, date: str, mode: str) -> dict:
         "period_index": {pid: {"label": p["label"], "start": p["start"], "end": p["end"]}
                          for pid, p in by_id.items()},
     }
+
+
+def _r(value):
+    return round(value) if value is not None else None
 
 
 def _dose(pm25: float, minutes: int, effort: str, indoor: bool) -> float:

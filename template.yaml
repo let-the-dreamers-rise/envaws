@@ -10,6 +10,17 @@ Parameters:
   BedrockRegion:
     Type: String
     Default: us-east-1
+  PrincipalEmail:
+    Type: String
+    Default: ""
+    Description: Optional. Gets the 5:30 AM "plan ready" email (confirm the SNS subscription once).
+  SiteUrl:
+    Type: String
+    Default: ""
+    Description: Public URL of the frontend, used for the approve link in emails.
+
+Conditions:
+  HasEmail: !Not [!Equals [!Ref PrincipalEmail, ""]]
 
 Globals:
   Function:
@@ -25,6 +36,8 @@ Globals:
         MODEL_ID: !Ref ModelId
         BEDROCK_REGION: !Ref BedrockRegion
         LLM_MODE: auto
+        TOPIC_ARN: !Ref PlanReadyTopic
+        SITE_URL: !Ref SiteUrl
 
 Resources:
   Table:
@@ -49,6 +62,19 @@ Resources:
       LifecycleConfiguration:
         Rules:
           - { Id: expire-voice-notes, Status: Enabled, ExpirationInDays: 30 }
+
+  PlanReadyTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: CleanHour
+
+  PrincipalSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasEmail
+    Properties:
+      TopicArn: !Ref PlanReadyTopic
+      Protocol: email
+      Endpoint: !Ref PrincipalEmail
 
   HttpApi:
     Type: AWS::Serverless::HttpApi
@@ -88,6 +114,7 @@ Resources:
       Timeout: 120
       Policies:
         - DynamoDBCrudPolicy: { TableName: !Ref Table }
+        - SNSPublishMessagePolicy: { TopicName: !GetAtt PlanReadyTopic.TopicName }
         - Statement:
             - Effect: Allow
               Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
@@ -153,10 +180,28 @@ Resources:
             Type: Task
             Resource: arn:aws:states:::lambda:invoke
             Parameters: { FunctionName: "${PlanArn}", Payload.$: "$" }
-            ResultPath: null
+            ResultSelector: { quiet.$: $.Payload.quiet }
+            ResultPath: $.plan_result
             Retry:
               - { ErrorEquals: [Lambda.ServiceException, Lambda.TooManyRequestsException], MaxAttempts: 2, IntervalSeconds: 3 }
-            Next: WaitForApproval
+            Next: IsQuiet
+          IsQuiet:
+            Type: Choice
+            Comment: Clean air all day means no changes, so nothing to approve.
+            Choices:
+              - { Variable: $.plan_result.quiet, BooleanEquals: true, Next: PublishQuiet }
+            Default: WaitForApproval
+          PublishQuiet:
+            Type: Task
+            Resource: arn:aws:states:::lambda:invoke
+            Parameters:
+              FunctionName: "${PublishArn}"
+              Payload:
+                school_id.$: $.school_id
+                date.$: $.date
+                run_id.$: $.run_id
+                quiet: true
+            End: true
           WaitForApproval:
             Type: Task
             Resource: arn:aws:states:::lambda:invoke.waitForTaskToken

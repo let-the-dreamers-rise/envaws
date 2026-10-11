@@ -43,6 +43,11 @@ def build(plan: dict, school: dict) -> dict:
         en.append(f"Air today: {flag['en']} (PM2.5 {flag['pm25']} at {clock_en(idx[flag['period']]['start'])}).")
         hi.append(f"आज की हवा: {flag['hi']} ({clock_hi(idx[flag['period']]['start'])} पर PM2.5 {flag['pm25']})।")
 
+    heat = plan.get("heat")
+    if heat and heat["feels"] >= 35:
+        en.append(f"Heat: feels like {heat['feels']} °C by {clock_en(idx[heat['period']]['start'])}.")
+        hi.append(f"गर्मी: {clock_hi(idx[heat['period']]['start'])} तक {heat['feels']} °C जैसा महसूस होगा।")
+
     regulatory = sorted({r for c in plan["changes"] for r in c["rules"] if r in rules.REGULATORY})
     for r in regulatory:
         en.append(f"{rules.explain(r)}.")
@@ -60,9 +65,15 @@ def build(plan: dict, school: dict) -> dict:
             en.append(f"Recess{who_en} will be indoors (reading, board games).")
             hi.append(f"रिसेस{who_hi} आज अंदर होगा (किताबें, बोर्ड गेम)।")
 
+    for c in plan["changes"]:
+        if c["type"] == "move" and c.get("driver") == "heat":
+            en.append(f"PE for {c['class_id']} moved to a cooler hour: {clock_en(idx[c['to']]['start'])} "
+                      f"(feels like {c['feels_from']} → {c['feels_to']} °C).")
+            hi.append(f"गर्मी के कारण कक्षा {c['class_id']} का खेल ठंडे समय पर: {clock_hi(idx[c['to']]['start'])} "
+                      f"({c['feels_from']} → {c['feels_to']} °C महसूस)।")
     moves = defaultdict(list)
     for c in plan["changes"]:
-        if c["type"] == "move":
+        if c["type"] == "move" and c.get("driver") != "heat":
             moves[c["to"]].append(c)
     if moves:
         parts_en, parts_hi = [], []
@@ -83,7 +94,10 @@ def build(plan: dict, school: dict) -> dict:
         en.append("Children on the asthma-watch list will do light indoor activity during PE.")
         hi.append("अस्थमा सूची वाले बच्चे खेल के समय अंदर हल्की गतिविधि करेंगे।")
 
-    if not plan["quiet"]:
+    if not plan["quiet"] and m.get("heat_moves") or (heat and heat["feels"] >= 35 and not plan["quiet"]):
+        en.append("Please send a water bottle and a cap. Tell the class teacher if your child feels dizzy or unwell.")
+        hi.append("कृपया पानी की बोतल और टोपी भेजें। चक्कर या तबीयत खराब लगे तो कक्षा अध्यापक को बताएं।")
+    elif not plan["quiet"]:
         en.append("Please send a water bottle. Tell the class teacher if your child has a cough or breathlessness.")
         hi.append("कृपया पानी की बोतल भेजें। खांसी या सांस फूलने पर कक्षा अध्यापक को बताएं।")
 
@@ -97,12 +111,16 @@ def build(plan: dict, school: dict) -> dict:
     else:
         brief = [
             f"{flag['en']} at {clock_en(idx[flag['period']]['start'])} (PM2.5 {flag['pm25']}).",
-            f"{m['pe_moved']} PE periods moved, {m['pe_indoor']} indoors; PE air {m['pe_pm25_before']} → {m['pe_pm25_after']} µg/m³.",
+            f"{m['pe_moved']} PE period{'s' if m['pe_moved'] != 1 else ''} moved, {m['pe_indoor']} indoors; "
+            f"PE air {m['pe_pm25_before']} → {m['pe_pm25_after']} µg/m³.",
             f"Estimated PM2.5 inhaled during outdoor time: -{m['reduction_pct']}% "
             f"({m['dose_before_mg']} → {m['dose_after_mg']} mg across {m['students']} students).",
         ]
         if m["asthma_kids_indoor"]:
             brief.append(f"{m['asthma_kids_indoor']} asthma-watch students indoors during PE.")
+        if m.get("heat_moves"):
+            brief.append(f"Heat: {m['heat_moves']} PE period{'s' if m['heat_moves'] != 1 else ''} moved to cooler hours; hottest PE now feels like "
+                         f"{m['pe_feels_after']} °C (was {m['pe_feels_before']} °C).")
         if plan["regulatory"]:
             brief.append("Includes changes required by GRAP; these auto-apply if not approved by 6:45 AM.")
 

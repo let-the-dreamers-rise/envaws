@@ -2,6 +2,8 @@ const API = (window.CLEANHOUR_API || "").replace(/\/$/, "");
 const params = new URLSearchParams(location.search);
 const SID = params.get("school") || "demo-rohini";
 const REPLAY = "2025-11-21";
+const HEAT_REPLAY = "2025-04-08";
+const REPLAYS = { [REPLAY]: "Smog replay · 21 Nov 2025", [HEAT_REPLAY]: "Heat replay · 8 Apr 2025" };
 const BANDS = [
   ["Good", "#2e9e4f"], ["Satisfactory", "#8cc43f"], ["Moderate", "#f4c430"],
   ["Poor", "#f08a24"], ["Very Poor", "#d93b3b"], ["Severe", "#7e1f3c"],
@@ -44,16 +46,16 @@ function clock(hhmm) {
 }
 
 function dayLabel(iso, i) {
-  if (iso === REPLAY) return "Replay · 21 Nov 2025";
+  if (REPLAYS[iso]) return REPLAYS[iso];
   if (i === 0) return "Today";
   if (i === 1) return "Tomorrow";
   return new Date(iso + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
 }
 
 function renderDays() {
-  const days = [0, 1, 2, 3].map(istDate).concat([REPLAY]);
+  const days = [0, 1, 2, 3].map(istDate).concat([REPLAY, HEAT_REPLAY]);
   $("days").innerHTML = days.map((d, i) =>
-    `<button class="chip${d === REPLAY ? " replay" : ""}" data-date="${d}" aria-pressed="${d === state.date}">${esc(dayLabel(d, i))}</button>`).join("");
+    `<button class="chip${REPLAYS[d] ? " replay" : ""}" data-date="${d}" aria-pressed="${d === state.date}">${esc(dayLabel(d, i))}</button>`).join("");
   $("days").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => selectDay(b.dataset.date)));
 }
 
@@ -73,7 +75,7 @@ async function runCheck() {
   if (state.busy) return;
   state.busy = true; render();
   try {
-    const when = state.date === REPLAY ? "replay" : state.date;
+    const when = state.date;
     let item = await api(`/api/schools/${SID}/plans`, { method: "POST", body: { when } });
     item = await waitWhile(item, ["planning"]);
     state.item = item;
@@ -133,9 +135,12 @@ function render() {
 function renderHero(plan) {
   const hero = $("hero");
   if (!plan) {
-    const replay = state.date === REPLAY;
+    const intro = {
+      [REPLAY]: "Replay 21 Nov 2025: the smog week the Supreme Court called outdoor activity a “gas chamber”",
+      [HEAT_REPLAY]: "Replay 8 Apr 2025: Delhi's first heatwave of the year. Same school, same engine.",
+    }[state.date];
     hero.innerHTML = `<div class="empty">
-      <div class="big">${replay ? "Replay 21 Nov 2025, the week the Supreme Court called outdoor activity a “gas chamber”" : "No plan for this day yet"}</div>
+      <div class="big">${intro || "No plan for this day yet"}</div>
       <p>CleanHour runs automatically at 5:30 AM IST. You can run the check now.</p>
       <button class="btn primary" id="runBtn" ${state.busy ? "disabled" : ""}>${state.busy ? '<span class="spin"></span> Planning…' : "Run the 5:30 AM check"}</button>
     </div>`;
@@ -144,19 +149,26 @@ function renderHero(plan) {
   }
   const f = plan.flag, m = plan.metrics, idx = plan.period_index;
   const status = state.item.status;
-  const headline = plan.quiet ? `${f.en} air · normal timetable` : `${f.en} air · ${plan.changes.length} changes`;
+  const hot = plan.heat && plan.heat.feels >= 37;
+  const what = hot ? `Heat day · ${f.en} air` : `${f.en} air`;
+  const headline = plan.quiet ? `${what} · normal timetable` : `${what} · ${plan.changes.length} change${plan.changes.length === 1 ? "" : "s"}`;
+  const heat = plan.heat && plan.heat.feels >= 35 ? ` · Feels like ${plan.heat.feels} °C at ${clock(idx[plan.heat.period].start)}` : "";
+  const heatMetric = m.heat_moves > 0;
   hero.innerHTML = `
-    <div class="hero-band" style="background:${f.colour}">
-      <div class="flag" aria-hidden="true">${FLAG_ICON[f.key] || "⚪"}</div>
+    <div class="hero-band" style="background:${hot ? "#e0622a" : f.colour}">
+      <div class="flag" aria-hidden="true">${hot ? "☀️" : FLAG_ICON[f.key] || "⚪"}</div>
       <div>
         <div class="title">${esc(headline)}</div>
-        <div class="sub">Worst: PM2.5 ${f.pm25} at ${clock(idx[f.period].start)} · ${plan.mode === "replay" ? "Replay of " : ""}${new Date(plan.date + "T00:00:00").toDateString()} · GRAP ${["none", "I", "II", "III", "IV"][plan.grap_stage]}</div>
+        <div class="sub">Worst: PM2.5 ${f.pm25} at ${clock(idx[f.period].start)}${heat} · ${plan.mode === "replay" ? "Replay of " : ""}${new Date(plan.date + "T00:00:00").toDateString()} · GRAP ${["none", "I", "II", "III", "IV"][plan.grap_stage]}</div>
       </div>
       <span class="status-pill">${esc(STATUS_TEXT[status] || status)}</span>
     </div>
     <div class="metrics">
-      <div class="metric"><div class="v good">${m.reduction_pct > 0 ? "−" + m.reduction_pct + "%" : "0%"}</div><div class="l">PM2.5 breathed during outdoor time (est.)</div></div>
-      <div class="metric"><div class="v">${m.pe_pm25_before} → ${m.pe_pm25_after}</div><div class="l">Avg PM2.5 during PE</div></div>
+      ${heatMetric
+        ? `<div class="metric"><div class="v good">${m.pe_feels_before}° → ${m.pe_feels_after}°</div><div class="l">Hottest PE, feels-like °C</div></div>
+           <div class="metric"><div class="v">${m.reduction_pct > 0 ? "−" + m.reduction_pct + "%" : "0%"}</div><div class="l">PM2.5 breathed outdoors (est.)</div></div>`
+        : `<div class="metric"><div class="v good">${m.reduction_pct > 0 ? "−" + m.reduction_pct + "%" : "0%"}</div><div class="l">PM2.5 breathed during outdoor time (est.)</div></div>
+           <div class="metric"><div class="v">${m.pe_pm25_before} → ${m.pe_pm25_after}</div><div class="l">Avg PM2.5 during PE</div></div>`}
       <div class="metric"><div class="v">${m.pe_moved}${m.pe_indoor ? ` <small>+${m.pe_indoor} in</small>` : ""}</div><div class="l">PE periods moved${m.pe_indoor ? " / indoors" : ""}</div></div>
       <div class="metric"><div class="v">${m.asthma_kids_indoor}</div><div class="l">Asthma-watch kids kept in</div></div>
     </div>
@@ -173,7 +185,7 @@ function renderStrip(plan) {
     <div class="bar" title="${esc(p.label)} ${p.start}-${p.end}: PM2.5 ${p.pm25} (${esc(p.band.en)})">
       <div class="val">${p.pm25}</div>
       <div class="fill" style="height:${Math.max(4, (p.pm25 / max) * 100)}%;background:${p.band.colour}"></div>
-      <div class="lbl">${esc(p.id === "ASM" ? "Assembly" : p.id === "REC" ? "Recess" : p.id)}<br>${p.start}</div>
+      <div class="lbl">${esc(p.id === "ASM" ? "Assembly" : p.id === "REC" ? "Recess" : p.id)}<br>${p.start}${p.feels != null ? `<br><b class="feels">${p.feels}°</b>` : ""}</div>
     </div>`).join("");
   $("legend").innerHTML = BANDS.map(([n, c]) => `<span style="--c:${c}">${n}</span>`).join("");
   $("forecastSource").textContent = `Source: ${plan.forecast.source}`;
@@ -245,8 +257,10 @@ function renderChanges(plan) {
   $("changes").innerHTML = [...plan.changes].sort((a, b) => order[a.type] - order[b.type]).map((c) => {
     if (c.type === "move") {
       return `<div class="change"><div class="ic">⏱</div><div>
-        <div class="h">${esc(c.class_id)} PE: ${clock(idx[c.from].start)} → ${clock(idx[c.to].start)}</div>
-        <div class="d">PM2.5 ${c.pm25_from} → ${c.pm25_to} (${c.gain_pct}% cleaner). ${esc(c.swapped.subject)} (${esc(c.swapped.teacher)}) takes the earlier slot.</div>
+        <div class="h">${esc(c.class_id)} PE: ${clock(idx[c.from].start)} → ${clock(idx[c.to].start)}${c.driver === "heat" ? " · heat" : ""}</div>
+        <div class="d">${c.driver === "heat"
+          ? `Feels like ${c.feels_from} → ${c.feels_to} °C (${c.feels_from - c.feels_to}° cooler).`
+          : `PM2.5 ${c.pm25_from} → ${c.pm25_to} (${c.gain_pct}% cleaner).`} ${esc(c.swapped.subject)} (${esc(c.swapped.teacher)}) takes the ${idx[c.to].start < idx[c.from].start ? "later" : "earlier"} slot.</div>
         ${ruleChips(plan, c.rules)}${skippedText(plan, c.skipped)}</div></div>`;
     }
     if (c.type === "indoor") {

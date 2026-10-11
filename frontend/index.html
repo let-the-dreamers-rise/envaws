@@ -145,7 +145,7 @@
         <article class="card c-lungs loop" data-rise><div class="viz viz-lungs" aria-hidden="true"><span></span></div><h3>Asthma watch</h3><p>Parents opt their child in; stricter rules keep them in when others can go out.</p></article>
         <article class="card c-voice loop" data-rise><div class="viz viz-voice" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h3>Hindi voice note</h3><p>For parents who'd rather listen than read. Amazon Polly, neural Hindi.</p></article>
         <article class="card c-chat loop" data-rise><div class="viz viz-chat" aria-hidden="true"><span></span><span></span><span></span></div><h3>WhatsApp-native</h3><p>Schools already talk to parents in class groups, so CleanHour writes for them.</p></article>
-        <article class="card c-grap loop" data-rise><div class="viz viz-grap" aria-hidden="true"><i>I</i><i>II</i><i>III</i><i>IV</i></div><h3>GRAP-aware</h3><p>Flip the stage and the plan obeys it. Regulatory changes auto-apply.</p></article>
+        <article class="card c-grap loop" data-rise><div class="viz viz-grap" aria-hidden="true"><i>I</i><i>II</i><i>III</i><i>IV</i></div><h3>GRAP- and heat-aware</h3><p>Flip the GRAP stage and the plan obeys it. In April, heat rules pull PE into the morning instead.</p></article>
       </div>
     </section>
 
@@ -191,6 +191,7 @@
       <h2 class="display" id="faq-h" data-split>Honest <em>answers.</em></h2>
       <details><summary>Is a forecast accurate enough to plan a school day?</summary><p>CleanHour uses the CAMS model via Open-Meteo. It underestimates absolute peaks compared with ground stations, but it captures the daily shape well, and the shape is what decides which hour is cleanest. The next step is correcting it each morning with CPCB station readings.</p></details>
       <details><summary>What happens when GRAP Stage III or IV is declared?</summary><p>The stage is an input to the Cedar rules. Stage III suspends outdoor sports and Stage IV keeps every outdoor activity in. These changes are marked regulatory and apply even if the principal doesn't respond.</p></details>
+      <details><summary>Isn't 1 PM too hot for PE?</summary><p>Sometimes, and CleanHour checks. The forecast includes feels-like temperature, and Cedar heat rules (35 °C for classes 1–5, 37 °C for sports, 41 °C for everyone) forbid hot slots. When heat is the problem, PE moves to the coolest allowed hour instead. Replayed on 8 April 2025, Delhi's first heatwave, it pulled 8A's PE from 11:45 to 9:25 AM: feels-like 38 → 33 °C. Same engine, all year.</p></details>
       <details><summary>Does the AI decide whether children go outside?</summary><p>No. Plain code picks the slots and Cedar policies decide what's allowed. The agent only writes the notices and answers questions, using read-only tools.</p></details>
       <details><summary>Do schools need to buy air sensors?</summary><p>No. A school needs coordinates and a timetable. That's what lets it reach government schools, not just the few that can afford monitors.</p></details>
       <details><summary>Which languages does it speak?</summary><p>Hindi and English today, including a Hindi voice note. Because the agent writes from structured facts, adding Punjabi, Urdu or Bengali is a prompt change, not a rewrite.</p></details>

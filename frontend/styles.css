@@ -64,7 +64,14 @@ button { font: inherit; cursor: pointer; }
 
 /* Layout */
 .grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; padding: 10px 0 40px; }
-@media (max-width: 920px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 920px) {
+  /* Phone at 6 AM: the decision and the Approve button come right after the headline. */
+  .grid { display: flex; flex-direction: column; }
+  .grid > .stack { display: contents; }
+  #hero { order: 1; } #approveCard { order: 2; } #changesCard { order: 3; } #airCard { order: 4; }
+  #ttCard { order: 5; } .grid aside > section:not(#approveCard) { order: 6; } .grid aside > p { order: 7; }
+}
+.bar .lbl .feels { color: var(--warn); font-weight: 700; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
 .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 12px; font-weight: 650; }
 .stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; min-width: 0; }
