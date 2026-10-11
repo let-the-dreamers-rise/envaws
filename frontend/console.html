@@ -9,6 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="staff.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -22,6 +24,7 @@
           <option value="3">III</option><option value="4">IV</option>
         </select>
       </label>
+      <span id="who" class="who"></span>
       <a class="btn" href="onboard.html">+ Add your school</a>
       <a class="btn" id="parentLink" href="parent.html" target="_blank" rel="noopener">Parent page ↗</a>
     </div>
@@ -70,6 +73,11 @@
           <div class="notice" id="notice"></div>
           <div class="src" id="noticeSrc"></div>
           <div class="actions" id="actions"></div>
+        </section>
+
+        <section class="card hidden" id="staffCard">
+          <h2>Staff changes</h2>
+          <div id="staff"></div>
         </section>
 
         <section class="card">

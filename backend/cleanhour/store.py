@@ -15,6 +15,10 @@ def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 
+class StateConflict(Exception):
+    pass
+
+
 class _Local:
     _lock = threading.Lock()
 
@@ -50,6 +54,17 @@ class _Local:
         with self._lock:
             return [v for v in self._load().values() if v["sk"] == sk]
 
+    def transition(self, pk, sk, expected, attrs):
+        with self._lock:
+            data = self._load()
+            item = data.get(f"{pk}|{sk}")
+            if not item or item.get("status") not in expected:
+                raise StateConflict(item.get("status") if item else "missing")
+            item.update(attrs)
+            with open(self.path, "w") as f:
+                json.dump(data, f, ensure_ascii=False)
+            return item
+
 
 class _Dynamo:
     def __init__(self):
@@ -71,6 +86,24 @@ class _Dynamo:
     def scan_prefix(self, sk):
         from boto3.dynamodb.conditions import Attr
         return self.table.scan(FilterExpression=Attr("sk").eq(sk))["Items"]
+
+    def transition(self, pk, sk, expected, attrs):
+        """Conditional update: only succeeds if the current status is one of `expected`."""
+        from botocore.exceptions import ClientError
+        names = {"#s": "status", **{f"#a{i}": k for i, k in enumerate(attrs)}}
+        values = {**{f":e{i}": v for i, v in enumerate(expected)},
+                  **{f":v{i}": v for i, v in enumerate(attrs.values())}}
+        try:
+            return self.table.update_item(
+                Key={"pk": pk, "sk": sk},
+                UpdateExpression="SET " + ", ".join(f"#a{i} = :v{i}" for i in range(len(attrs))),
+                ConditionExpression=f"#s IN ({', '.join(f':e{i}' for i in range(len(expected)))})",
+                ExpressionAttributeNames=names, ExpressionAttributeValues=values,
+                ReturnValues="ALL_NEW")["Attributes"]
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                raise StateConflict("status changed") from e
+            raise
 
 
 _backend = None
@@ -112,6 +145,11 @@ def put_plan_item(sid, date, plan=None, **attrs):
     item["updated_at"] = now()
     backend().put(item)
     return item
+
+
+def transition_plan(sid, date, expected, **attrs):
+    """Atomically move a plan between states; raises StateConflict if someone else got there first."""
+    return backend().transition(f"SCHOOL#{sid}", f"PLAN#{date}", tuple(expected), {**attrs, "updated_at": now()})
 
 
 def list_plan_items(sid, limit=20):

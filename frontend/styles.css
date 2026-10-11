@@ -190,3 +190,17 @@ audio { width: 100%; margin-top: 4px; }
 .drop img { max-height: 260px; max-width: 100%; border-radius: 10px; }
 .btn:hover:not(:disabled) { filter: brightness(1.05); }
 .btn:focus-visible, .chip:focus-visible, .seg button:focus-visible, .tabs button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* Staff sign-in and roles */
+.auth-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 16px; background: rgba(10, 14, 12, .55); }
+.auth-card { width: min(420px, 100%); display: grid; gap: 10px; }
+.auth-card h2 { margin: 0; }
+.auth-error { color: var(--danger); min-height: 1.2em; margin: 0; font-size: 13px; }
+.who { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.role-note { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; }
+.staff { padding: 10px 0; border-top: 1px solid var(--line); }
+.staff:first-of-type { border-top: 0; }
+.staff .h { font-weight: 650; }
+.staff ul { margin: 4px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--muted); }
+.staff li.moved { color: var(--text); }
+.staff-mine { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; border-top: 0; }

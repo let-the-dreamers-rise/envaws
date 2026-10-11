@@ -151,3 +151,38 @@ def test_calibration_scales_model_to_station_by_season():
     assert "Rohini" in station and hours[0]["pm25"] == 310.0 and hours[0]["pm25_model"] == 100.0
     april = [{"time": "08:00", "pm25": 100.0}]
     assert forecast.calibrate(april, "2026-04-10", DEMO_SCHOOL["calibration"]) is None and april[0]["pm25"] == 100.0
+
+
+def call_as(method, path, claims=None, body=None, demo_user=None):
+    event = {"rawPath": path, "requestContext": {"http": {"method": method}},
+             "body": json.dumps(body) if body else None, "headers": {}}
+    if claims is not None:
+        event["requestContext"]["authorizer"] = {"jwt": {"claims": claims}}
+    if demo_user:
+        event["headers"]["x-demo-user"] = demo_user
+    out = api.handler(event)
+    return out["statusCode"], json.loads(out["body"]) if out["body"] else None
+
+
+def test_cedar_staff_policies_at_the_api(local_store):
+    from cleanhour import authz
+    principal, teacher, admin = (authz.DEMO_USERS[r] for r in ("principal", "teacher", "admin"))
+    assert call_as("POST", "/api/schools/demo-rohini/plans", principal, {"when": "replay"})[0] == 202
+    assert call_as("GET", "/api/schools/demo-rohini/plans/2025-11-06", teacher)[0] == 200
+    status, body = call_as("POST", "/api/schools/demo-rohini/plans/2025-11-06/approve", teacher)
+    assert status == 403 and "principal" in body["error"]
+    status, body = call_as("POST", "/api/schools/demo-rohini/plans/2025-11-06/approve", admin)
+    assert status == 403, "admins never approve on a school's behalf"
+    other = {**principal, "sub": "p2", "custom:school": "another-school"}
+    assert call_as("POST", "/api/schools/demo-rohini/plans/2025-11-06/approve", other)[0] == 403
+    status, body = call_as("POST", "/api/schools/demo-rohini/plans/2025-11-06/approve", principal)
+    assert status == 200 and body["status"] == "published" and body["approved_by"].startswith("Mrs. Sharma")
+    assert call_as("GET", "/api/public/demo-rohini/latest")[0] == 200, "parents need no account"
+    status, body = call_as("GET", "/api/me", demo_user="teacher")
+    assert body["role"] == "teacher" and body["can"] == ["ViewPlan", "Ask"]
+
+
+def test_protected_routes_need_a_token_in_aws(local_store, monkeypatch):
+    from cleanhour import config
+    monkeypatch.setattr(config, "running_in_aws", lambda: True)
+    assert call_as("GET", "/api/schools/demo-rohini/audit")[0] == 401

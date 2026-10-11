@@ -76,13 +76,48 @@ Resources:
       Protocol: email
       Endpoint: !Ref PrincipalEmail
 
+  # Staff identity. Roles and school live in custom attributes; Cedar (authz.cedar) decides authority.
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: cleanhour-staff
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      AdminCreateUserConfig: { AllowAdminCreateUserOnly: true }
+      Policies:
+        PasswordPolicy: { MinimumLength: 10, RequireLowercase: true, RequireUppercase: true, RequireNumbers: true, RequireSymbols: true }
+      Schema:
+        - { Name: role, AttributeDataType: String, Mutable: true }
+        - { Name: school, AttributeDataType: String, Mutable: true }
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: cleanhour-web
+      GenerateSecret: false
+      ExplicitAuthFlows: [ALLOW_USER_PASSWORD_AUTH, ALLOW_REFRESH_TOKEN_AUTH]
+      PreventUserExistenceErrors: ENABLED
+      IdTokenValidity: 8
+      TokenValidityUnits: { IdToken: hours }
+      ReadAttributes: [email, name, custom:role, custom:school]
+      WriteAttributes: [name]
+
   HttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
       CorsConfiguration:
         AllowOrigins: ["*"]
         AllowMethods: [GET, POST, OPTIONS]
-        AllowHeaders: [content-type]
+        AllowHeaders: [content-type, authorization]
+      Auth:
+        DefaultAuthorizer: CognitoJwt
+        Authorizers:
+          CognitoJwt:
+            IdentitySource: $request.header.Authorization
+            JwtConfiguration:
+              issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+              audience: [!Ref UserPoolClient]
 
   ApiFunction:
     Type: AWS::Serverless::Function
@@ -103,9 +138,15 @@ Resources:
               Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
               Resource: "*"
       Events:
-        Api:
+        Staff:
           Type: HttpApi
           Properties: { ApiId: !Ref HttpApi, Path: "/api/{proxy+}", Method: ANY }
+        Parents:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: "/api/public/{proxy+}", Method: GET, Auth: { Authorizer: NONE } }
+        Health:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: /api/health, Method: GET, Auth: { Authorizer: NONE } }
 
   PlanFunction:
     Type: AWS::Serverless::Function
@@ -245,5 +286,9 @@ Outputs:
   ApiUrl:
     Description: Base URL for the frontend's config.js
     Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
+  UserPoolId:
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Value: !Ref UserPoolClient
   StateMachine:
     Value: !Ref DailyPlan

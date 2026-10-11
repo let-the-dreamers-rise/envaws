@@ -28,6 +28,7 @@ class Handler(SimpleHTTPRequestHandler):
             "rawPath": parts.path,
             "queryStringParameters": dict(parse_qsl(parts.query)) or None,
             "requestContext": {"http": {"method": method}},
+            "headers": {k.lower(): v for k, v in self.headers.items()},
             "body": self.rfile.read(length).decode() if length else None,
         }
         out = api.handler(event)

@@ -1,6 +1,6 @@
 const API = (window.CLEANHOUR_API || "").replace(/\/$/, "");
 const params = new URLSearchParams(location.search);
-const SID = params.get("school") || "demo-rohini";
+let SID = params.get("school") || "";
 const REPLAY = "2025-11-06";
 const HEAT_REPLAY = "2025-04-08";
 const REPLAYS = { [REPLAY]: "Smog replay · 6 Nov 2025", [HEAT_REPLAY]: "Heat replay · 8 Apr 2025" };
@@ -14,17 +14,22 @@ const STATUS_TEXT = {
   published: "Published to parents", expired: "Expired (not approved)",
 };
 
-const state = { school: null, date: null, view: "after", lang: "hi", item: null, busy: false };
+const state = { school: null, me: null, date: null, view: "after", lang: "hi", item: null, busy: false };
+const can = (action) => !!(state.me && state.me.can.includes(action));
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function api(path, opts = {}) {
+async function api(path, opts = {}, retried = false) {
   const res = await fetch(API + path, {
     method: opts.method || "GET",
-    headers: opts.body ? { "content-type": "application/json" } : {},
+    headers: { ...(opts.body ? { "content-type": "application/json" } : {}), ...(await CHAuth.headers()) },
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
+  if (res.status === 401 && CHAuth.enabled && !retried) {
+    await CHAuth.dialog("Your session has ended. Sign in again.");
+    return api(path, opts, true);
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) { const e = new Error(data.error || res.statusText); e.status = res.status; throw e; }
   return data;
@@ -121,15 +126,29 @@ async function setGrap(stage) {
   } catch (e) { toast(e.message); }
 }
 
+function renderWho() {
+  const me = state.me;
+  if (CHAuth.enabled) {
+    $("who").innerHTML = `<span>${esc(me.name)} · ${esc(me.role)}</span> <button class="btn" type="button" id="signOut">Sign out</button>`;
+    $("signOut").addEventListener("click", CHAuth.signOut);
+  } else {
+    $("who").innerHTML = `<label class="grap">Demo as <select id="roleSel" aria-label="Demo role">
+      ${["principal", "teacher", "admin"].map((r) => `<option value="${r}" ${r === CHAuth.demoRole() ? "selected" : ""}>${r === "teacher" ? "PE teacher" : r === "admin" ? "District admin" : "Principal"}</option>`).join("")}
+    </select></label>`;
+    $("roleSel").addEventListener("change", (e) => CHAuth.setDemoRole(e.target.value));
+  }
+}
+
 function render() {
   const plan = state.item && state.item.plan;
   renderHero(plan);
-  ["airCard", "ttCard", "changesCard", "approveCard"].forEach((id) => $(id).classList.toggle("hidden", !plan));
+  ["airCard", "ttCard", "changesCard", "approveCard", "staffCard"].forEach((id) => $(id).classList.toggle("hidden", !plan));
   if (!plan) return;
   renderStrip(plan);
   renderTimetable(plan);
   renderChanges(plan);
   renderApprove(plan);
+  CHStaff.render($("staff"), plan, state.me);
 }
 
 function renderHero(plan) {
@@ -142,9 +161,9 @@ function renderHero(plan) {
     hero.innerHTML = `<div class="empty">
       <div class="big">${intro || "No plan for this day yet"}</div>
       <p>CleanHour runs automatically at 5:30 AM IST. You can run the check now.</p>
-      <button class="btn primary" id="runBtn" ${state.busy ? "disabled" : ""}>${state.busy ? '<span class="spin"></span> Planning…' : "Run the 5:30 AM check"}</button>
+      ${can("RunPlan") ? `<button class="btn primary" id="runBtn" ${state.busy ? "disabled" : ""}>${state.busy ? '<span class="spin"></span> Planning…' : "Run the 5:30 AM check"}</button>` : ""}
     </div>`;
-    $("runBtn").addEventListener("click", runCheck);
+    $("runBtn")?.addEventListener("click", runCheck);
     return;
   }
   const f = plan.flag, m = plan.metrics, idx = plan.period_index;
@@ -161,7 +180,7 @@ function renderHero(plan) {
         <div class="title">${esc(headline)}</div>
         <div class="sub">Worst: PM2.5 ${f.pm25} at ${clock(idx[f.period].start)}${heat} · ${plan.mode === "replay" ? "Replay of " : ""}${new Date(plan.date + "T00:00:00").toDateString()} · GRAP ${["none", "I", "II", "III", "IV"][plan.grap_stage]}</div>
       </div>
-      <span class="status-pill">${esc(STATUS_TEXT[status] || status)}</span>
+      <span class="status-pill">${esc(status === "pending_approval" && !can("Approve") ? "Awaiting the principal" : STATUS_TEXT[status] || status)}</span>
     </div>
     <div class="metrics">
       ${heatMetric
@@ -173,10 +192,10 @@ function renderHero(plan) {
       <div class="metric"><div class="v">${m.asthma_kids_indoor}</div><div class="l">Asthma-watch kids kept in</div></div>
     </div>
     <div style="padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <button class="btn" id="rerunBtn" ${state.busy ? "disabled" : ""}>${state.busy ? '<span class="spin"></span> Planning…' : "↻ Re-run check"}</button>
+      ${can("RunPlan") ? `<button class="btn" id="rerunBtn" ${state.busy ? "disabled" : ""}>${state.busy ? '<span class="spin"></span> Planning…' : "↻ Re-run check"}</button>` : ""}
       <span class="note">Plan generated ${new Date(plan.generated_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })} IST</span>
     </div>`;
-  $("rerunBtn").addEventListener("click", runCheck);
+  $("rerunBtn")?.addEventListener("click", runCheck);
 }
 
 function renderStrip(plan) {
@@ -302,7 +321,9 @@ function renderApprove(plan) {
 
   const status = state.item.status;
   const actions = $("actions");
-  if (status === "pending_approval") {
+  if (status === "pending_approval" && !can("Approve")) {
+    actions.innerHTML = `<p class="note role-note">Waiting for the principal. Your role (${esc(state.me ? state.me.role : "guest")}) can view and ask, but only the school's principal can approve what children do (Cedar staff policy).</p>`;
+  } else if (status === "pending_approval") {
     actions.innerHTML = `<button class="btn primary block" id="approveBtn" ${state.busy ? "disabled" : ""}>${state.busy ? '<span class="spin"></span> Publishing…' : "✓ Approve & publish"}</button>
       <p class="note">${plan.regulatory ? "Includes GRAP-required changes: these auto-apply at the deadline if you don't respond." : "Advisory changes: nothing goes to parents until you approve."}</p>`;
     $("approveBtn").addEventListener("click", approve);
@@ -345,7 +366,18 @@ async function init() {
   const suggestions = ["Can 7A do sports practice at 12:30?", "Kya 3A ke asthma wale bachche bahar khel sakte hain?", "Why is assembly indoors today?"];
   $("suggest").innerHTML = suggestions.map((s) => `<button type="button">${esc(s)}</button>`).join("");
   $("suggest").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { $("askInput").value = b.textContent; ask(b.textContent); }));
+  await CHAuth.ensure();
+  try {
+    state.me = await api("/api/me");
+  } catch (e) {
+    $("schoolName").textContent = `Can't reach the CleanHour API (${e.message})`;
+    return;
+  }
+  SID = SID || state.me.home_school;
+  renderWho();
   $("parentLink").href = `parent.html?school=${SID}`;
+  $("grap").disabled = !can("SetGrap");
+  $("askForm").closest("section").classList.toggle("hidden", !can("Ask"));
 
   try {
     state.school = await api(`/api/schools/${SID}`);

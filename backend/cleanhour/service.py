@@ -81,13 +81,13 @@ def create_school_from_photo(name: str, lat: float, lon: float, image_b64: str, 
     return new
 
 
-def set_grap(sid: str, stage: int) -> dict:
+def set_grap(sid: str, stage: int, by: str = "admin") -> dict:
     if stage not in range(0, 5):
         raise ValueError("GRAP stage must be 0-4")
     s = school(sid)
     s["grap_stage"] = stage
     store.put_school(s)
-    store.audit(sid, "grap_stage_set", f"GRAP stage set to {stage}")
+    store.audit(sid, "grap_stage_set", f"GRAP stage set to {stage} by {by}")
     return s
 
 
@@ -182,12 +182,19 @@ def approve(sid: str, date: str, by: str = "principal") -> dict:
     if config.STATE_MACHINE_ARN:
         if not item.get("task_token"):
             raise Conflict("workflow is still starting, retry in a second")
+        try:  # claim the approval first, so a double tap can never resume the workflow twice
+            store.transition_plan(sid, date, ["pending_approval"], status="approved", approved_by=by)
+        except store.StateConflict as e:
+            raise Conflict(f"plan was already {e}") from e
         import boto3
         boto3.client("stepfunctions").send_task_success(
             taskToken=item["task_token"], output=json.dumps({"approved_by": by}))
-        store.put_plan_item(sid, date, status="approved", approved_by=by)
         store.audit(sid, "approved", f"{date} by {by}")
         return plan_view(sid, date)
+    try:
+        store.transition_plan(sid, date, ["pending_approval"], status="approved", approved_by=by)
+    except store.StateConflict as e:
+        raise Conflict(f"plan was already {e}") from e
     store.audit(sid, "approved", f"{date} by {by}")
     return publish(sid, date, by=by)
 
@@ -200,7 +207,10 @@ def publish(sid: str, date: str, auto: bool = False, by: str | None = None, run_
         return plan_view(sid, date)  # superseded plan; nothing to publish
     plan = item["plan"]
     if auto and not plan["regulatory"]:
-        store.put_plan_item(sid, date, status="expired")
+        try:
+            store.transition_plan(sid, date, ["pending_approval"], status="expired")
+        except store.StateConflict:
+            return plan_view(sid, date)
         store.audit(sid, "expired", f"{date}: not approved in time; advisory changes not applied")
         return plan_view(sid, date)
     key = None
@@ -208,9 +218,12 @@ def publish(sid: str, date: str, auto: bool = False, by: str | None = None, run_
         key = voice.synthesize(plan["notices"]["voice_script_hi"], f"voice/{sid}/{date}-{plan['run_id']}.mp3")
     except Exception as e:
         store.audit(sid, "voice_failed", str(e)[:200])
-    store.put_plan_item(sid, date, status="published", voice_key=key,
-                        approved_by=by or ("auto: GRAP rules" if auto else item.get("approved_by")),
-                        published_at=store.now())
+    try:
+        store.transition_plan(sid, date, ["pending_approval", "approved"], status="published", voice_key=key,
+                              approved_by=by or ("auto: GRAP rules" if auto else item.get("approved_by")),
+                              published_at=store.now())
+    except store.StateConflict:
+        return plan_view(sid, date)  # already published or superseded
     store.audit(sid, "published", f"{date}{' (auto, regulatory)' if auto else ''}")
     return plan_view(sid, date)
 

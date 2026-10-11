@@ -25,16 +25,37 @@ sam deploy --stack-name "$STACK" --region "$REGION" --capabilities CAPABILITY_IA
   --resolve-s3 --no-confirm-changeset --no-fail-on-empty-changeset \
   --parameter-overrides "${OVERRIDES[@]}"
 
-API_URL="$(aws cloudformation describe-stacks --stack-name "$STACK" --region "$REGION" \
-  --query "Stacks[0].Outputs[?OutputKey=='ApiUrl'].OutputValue" --output text)"
+output() {
+  aws cloudformation describe-stacks --stack-name "$STACK" --region "$REGION" \
+    --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" --output text
+}
+API_URL="$(output ApiUrl)"
+POOL_ID="$(output UserPoolId)"
+CLIENT_ID="$(output UserPoolClientId)"
 echo "API: $API_URL"
+
+echo "==> Creating demo staff accounts (principal, PE teacher, district admin)"
+DEMO_PASSWORD="${DEMO_PASSWORD:-CleanHour#2026}"
+demo_user() {  # email name role school
+  aws cognito-idp admin-create-user --user-pool-id "$POOL_ID" --region "$REGION" --username "$1" \
+    --message-action SUPPRESS --user-attributes Name=email,Value="$1" Name=email_verified,Value=true \
+    Name=name,Value="$2" Name=custom:role,Value="$3" Name=custom:school,Value="$4" >/dev/null 2>&1 || true
+  aws cognito-idp admin-set-user-password --user-pool-id "$POOL_ID" --region "$REGION" --username "$1" \
+    --password "$DEMO_PASSWORD" --permanent
+}
+demo_user principal@demo-rohini.cleanhour.in "Mrs. Sharma (Principal)" principal demo-rohini
+demo_user pe.teacher@demo-rohini.cleanhour.in "Mr. Rawat" teacher demo-rohini
+demo_user district.admin@cleanhour.in "District admin" admin "*"
 
 echo "==> Packaging the frontend"
 SITE="$ROOT/.aws-sam/site"
 rm -rf "$SITE" "$ROOT/.aws-sam/site.zip"
 mkdir -p "$SITE"
 cp -R frontend/. "$SITE/"
-printf 'window.CLEANHOUR_API = "%s";\n' "$API_URL" > "$SITE/config.js"
+cat > "$SITE/config.js" <<EOF
+window.CLEANHOUR_API = "$API_URL";
+window.CLEANHOUR_AUTH = { region: "$REGION", clientId: "$CLIENT_ID", demoPassword: "$DEMO_PASSWORD" };
+EOF
 (cd "$SITE" && zip -qr ../site.zip .)
 
 echo "==> Deploying the frontend to Amplify Hosting"
@@ -49,3 +70,4 @@ echo
 echo "Site:    $SITE_URL"
 echo "Console: $SITE_URL/console.html?date=2025-11-06"
 echo "API:     $API_URL/api/health"
+echo "Demo logins (password $DEMO_PASSWORD): principal@demo-rohini.cleanhour.in, pe.teacher@demo-rohini.cleanhour.in, district.admin@cleanhour.in"

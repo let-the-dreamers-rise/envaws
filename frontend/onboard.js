@@ -49,7 +49,7 @@ $("form").addEventListener("submit", async (e) => {
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Reading the timetable…';
   try {
     const res = await fetch(`${API}/api/schools`, {
-      method: "POST", headers: { "content-type": "application/json" },
+      method: "POST", headers: { "content-type": "application/json", ...(await CHAuth.headers()) },
       body: JSON.stringify({ name: $("name").value, lat: $("lat").value, lon: $("lon").value,
         image_base64: image.split(",")[1], image_format: "jpeg" }),
     });
@@ -78,3 +78,17 @@ function showResult(school) {
     </div>`;
   $("result").scrollIntoView({ behavior: "smooth" });
 }
+
+// District admins add schools (Cedar staff policy). Everyone else sees why, and how to switch.
+(async () => {
+  await CHAuth.ensure("District admins add schools to CleanHour.");
+  const res = await fetch(`${API}/api/me`, { headers: await CHAuth.headers() });
+  const me = await res.json().catch(() => ({}));
+  if (res.ok && me.can.includes("CreateSchool")) return;
+  $("form").closest("section").classList.add("hidden");
+  $("gate").classList.remove("hidden");
+  $("gate").innerHTML = `<h2>District admins add schools</h2>
+    <p>You're signed in as ${esc(me.name || "a guest")} (${esc(me.role || "no role")}). Adding a school is a district admin action in CleanHour's Cedar staff policy.</p>
+    <button class="btn primary" id="switch" type="button">${CHAuth.enabled ? "Sign in as a district admin" : "Demo as the district admin"}</button>`;
+  $("switch").addEventListener("click", () => (CHAuth.enabled ? CHAuth.signOut() : CHAuth.setDemoRole("admin")));
+})();
