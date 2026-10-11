@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: pip install -r backend/requirements.txt pytest cfn-lint
+      - name: Unit tests (Cedar rules, staff policies, optimizer, heat, calibration, API)
+        run: python -m pytest -q backend/tests
+      - name: Lint the SAM template
+        run: cfn-lint template.yaml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Syntax-check frontend JavaScript
+        run: for f in frontend/*.js frontend/landing/*.js; do node --check "$f"; done

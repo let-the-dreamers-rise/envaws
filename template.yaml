@@ -38,6 +38,8 @@ Globals:
         LLM_MODE: auto
         TOPIC_ARN: !Ref PlanReadyTopic
         SITE_URL: !Ref SiteUrl
+        POWERTOOLS_SERVICE_NAME: cleanhour
+        POWERTOOLS_METRICS_NAMESPACE: CleanHour
 
 Resources:
   Table:
@@ -282,6 +284,41 @@ Resources:
                 auto: true
             End: true
 
+  # Ops: if the 5:30 AM workflow ever fails, someone hears about it before parents do.
+  DailyPlanFailedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: A CleanHour morning plan failed. Check the DailyPlan execution in Step Functions.
+      Namespace: AWS/States
+      MetricName: ExecutionsFailed
+      Dimensions: [{ Name: StateMachineArn, Value: !Ref DailyPlan }]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref PlanReadyTopic]
+
+  ImpactDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub ${AWS::StackName}-impact
+      DashboardBody: !Sub |
+        {"widgets": [
+          {"type": "text", "x": 0, "y": 0, "width": 24, "height": 2, "properties": {"markdown": "# CleanHour impact\nEvery 5:30 AM plan records what it changed for children. Metrics: Powertools for AWS Lambda (EMF)."}},
+          {"type": "metric", "x": 0, "y": 2, "width": 8, "height": 6, "properties": {"title": "PE periods moved to cleaner/cooler hours", "region": "${AWS::Region}", "stat": "Sum", "period": 86400, "view": "timeSeries",
+            "metrics": [["CleanHour", "PEPeriodsMoved", "service", "cleanhour"], [".", "PEPeriodsIndoor", ".", "."], [".", "HeatMoves", ".", "."]]}},
+          {"type": "metric", "x": 8, "y": 2, "width": 8, "height": 6, "properties": {"title": "Asthma-watch children kept indoors", "region": "${AWS::Region}", "stat": "Sum", "period": 86400, "view": "timeSeries",
+            "metrics": [["CleanHour", "AsthmaKidsKeptIn", "service", "cleanhour"]]}},
+          {"type": "metric", "x": 16, "y": 2, "width": 8, "height": 6, "properties": {"title": "Estimated PM2.5 dose cut (%)", "region": "${AWS::Region}", "stat": "Average", "period": 86400, "view": "timeSeries",
+            "metrics": [["CleanHour", "DoseReductionPercent", "service", "cleanhour"]]}},
+          {"type": "metric", "x": 0, "y": 8, "width": 12, "height": 6, "properties": {"title": "Morning workflow (Step Functions)", "region": "${AWS::Region}", "stat": "Sum", "period": 3600,
+            "metrics": [["AWS/States", "ExecutionsSucceeded", "StateMachineArn", "${DailyPlan}"], [".", "ExecutionsFailed", ".", "."], [".", "ExecutionsTimedOut", ".", "."]]}},
+          {"type": "metric", "x": 12, "y": 8, "width": 12, "height": 6, "properties": {"title": "Plans published / auto-published for GRAP / expired", "region": "${AWS::Region}", "stat": "Sum", "period": 86400,
+            "metrics": [["CleanHour", "PlansPublished", "service", "cleanhour"], [".", "AutoPublishedForGRAP", ".", "."], [".", "PlansExpired", ".", "."]]}}
+        ]}
+
 Outputs:
   ApiUrl:
     Description: Base URL for the frontend's config.js
@@ -290,5 +327,7 @@ Outputs:
     Value: !Ref UserPool
   UserPoolClientId:
     Value: !Ref UserPoolClient
+  Dashboard:
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${AWS::StackName}-impact
   StateMachine:
     Value: !Ref DailyPlan
