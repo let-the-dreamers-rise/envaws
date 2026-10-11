@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CleanHour · Add your school</title>
+  <meta name="description" content="Photograph your timetable and CleanHour starts protecting your school's outdoor time tomorrow morning.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="logo" href="./"><span class="logo-mark"></span>CleanHour</a>
+      <span class="school-name">Add your school</span>
+    </div>
+  </header>
+  <main class="parent stack" style="max-width:640px">
+    <section class="card">
+      <h2>1 · Your school</h2>
+      <form id="form" class="stack" style="gap:12px">
+        <label>School name<br><input class="field" id="name" required maxlength="80" placeholder="e.g. Govt. Sarvodaya Vidyalaya, Sector 8"></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
+          <label style="flex:1;min-width:120px">Latitude<br><input class="field" id="lat" required inputmode="decimal" value="28.6139"></label>
+          <label style="flex:1;min-width:120px">Longitude<br><input class="field" id="lon" required inputmode="decimal" value="77.2090"></label>
+          <button class="btn" type="button" id="locate">📍 Use my location</button>
+        </div>
+        <h2 style="margin-top:8px">2 · Photograph today's timetable</h2>
+        <label class="drop" id="drop">
+          <input type="file" id="photo" accept="image/*" capture="environment" required>
+          <span id="dropText">Tap to take a photo or choose an image</span>
+          <img id="preview" alt="" class="hidden">
+        </label>
+        <button class="btn primary block" id="submit" type="submit">Read timetable & create school</button>
+        <p class="note">The photo is read by a Strands agent on Amazon Bedrock. It only transcribes: periods, classes,
+          subjects and teachers. Games/PE/sports periods are detected as outdoor. Nothing about students is collected.</p>
+      </form>
+    </section>
+    <section class="card hidden" id="result"></section>
+  </main>
+  <div class="toast hidden" id="toast" role="status"></div>
+  <script src="onboard.js"></script>
+</body>
+</html>

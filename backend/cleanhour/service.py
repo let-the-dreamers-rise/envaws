@@ -51,6 +51,36 @@ def school(sid: str) -> dict:
     return s
 
 
+def create_school_from_photo(name: str, lat: float, lon: float, image_b64: str, fmt: str) -> dict:
+    """Photo of a timetable -> a live CleanHour school. Raises ValueError with a readable reason."""
+    import base64
+
+    from . import onboard
+    name = (name or "").strip()[:80]
+    if not name:
+        raise ValueError("school name is required")
+    if not (6 <= lat <= 38 and 68 <= lon <= 98):
+        raise ValueError("location must be in India")
+    if fmt not in ("jpeg", "png", "webp"):
+        raise ValueError("image must be jpeg, png or webp")
+    image = base64.b64decode(image_b64)
+    if len(image) > 3_500_000:
+        raise ValueError("image too large; keep it under 3.5 MB")
+    if not agent.enabled():
+        raise ValueError("reading a timetable photo needs Amazon Bedrock, which is not configured here")
+    try:
+        parsed = onboard.extract(image, fmt)
+        new = onboard.to_school(parsed, name, lat, lon)
+    except agent.AgentUnavailable as e:
+        raise ValueError(f"couldn't read the photo: {str(e)[:160]}") from e
+    except onboard.OnboardingError as e:
+        raise ValueError(str(e)) from e
+    store.put_school(new)
+    store.audit(new["id"], "school_created", f"from a timetable photo: {len(new['classes'])} classes, "
+                                             f"{len(new['periods'])} periods")
+    return new
+
+
 def set_grap(sid: str, stage: int) -> dict:
     if stage not in range(0, 5):
         raise ValueError("GRAP stage must be 0-4")

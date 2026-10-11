@@ -181,6 +181,7 @@ function renderHero(plan) {
 
 function renderStrip(plan) {
   const max = Math.max(150, ...plan.periods.map((p) => p.pm25));
+  $("strip").style.gridTemplateColumns = `repeat(${plan.periods.length}, minmax(0, 1fr))`;
   $("strip").innerHTML = plan.periods.map((p) => `
     <div class="bar" title="${esc(p.label)} ${p.start}-${p.end}: PM2.5 ${p.pm25} (${esc(p.band.en)})">
       <div class="val">${p.pm25}</div>

@@ -117,3 +117,29 @@ def test_cedar_heat_rules():
     assert rules.check("PE", 50, 0, "8A", 8, feels_like=33)["allowed"]
     assert not rules.check("Recess", 50, 0, "3A", 3, feels_like=36)["allowed"]
     assert rules.check("PE", 50, 0, "8A", 8)["allowed"], "unknown heat never blocks"
+
+
+def test_onboarding_normalises_a_transcription():
+    from cleanhour import onboard
+    parsed = {
+        "periods": [
+            {"label": "Assembly", "start": "7:40", "end": "8:00", "kind": "assembly"},
+            {"label": "I", "start": "8:00", "end": "8:40", "kind": "teaching"},
+            {"label": "II", "start": "8:40", "end": "9:20", "kind": "teaching"},
+            {"label": "Lunch", "start": "10:40", "end": "11:00", "kind": "recess"},
+            {"label": "III", "start": "11:00", "end": "11:40", "kind": "teaching"},
+            {"label": "IV", "start": "1:00", "end": "1:40", "kind": "teaching"},
+        ],
+        "classes": [{"name": "VI-B", "cells": [
+            {"period_index": 1, "subject": "Games", "teacher": "Mr. Singh"},
+            {"period_index": 2, "subject": "Maths", "teacher": "Ms. Rao"},
+            {"period_index": 4, "subject": "Hindi", "teacher": ""},
+        ]}],
+    }
+    school = onboard.to_school(parsed, "Test School", 28.6, 77.2)
+    tt = school["classes"][0]["timetable"]
+    assert tt["P1"]["subject"] == "PE"
+    assert [p["start"] for p in school["periods"]][-1] == "13:00"
+    assert set(tt) == {"P1", "P2", "P3", "P4"}
+    plan = optimizer.build_plan(school, REPLAY, "2025-11-21", "replay")
+    assert any(c["type"] == "move" for c in plan["changes"])

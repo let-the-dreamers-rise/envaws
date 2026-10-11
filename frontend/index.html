@@ -193,7 +193,7 @@
       <details><summary>What happens when GRAP Stage III or IV is declared?</summary><p>The stage is an input to the Cedar rules. Stage III suspends outdoor sports and Stage IV keeps every outdoor activity in. These changes are marked regulatory and apply even if the principal doesn't respond.</p></details>
       <details><summary>Isn't 1 PM too hot for PE?</summary><p>Sometimes, and CleanHour checks. The forecast includes feels-like temperature, and Cedar heat rules (35 °C for classes 1–5, 37 °C for sports, 41 °C for everyone) forbid hot slots. When heat is the problem, PE moves to the coolest allowed hour instead. Replayed on 8 April 2025, Delhi's first heatwave, it pulled 8A's PE from 11:45 to 9:25 AM: feels-like 38 → 33 °C. Same engine, all year.</p></details>
       <details><summary>Does the AI decide whether children go outside?</summary><p>No. Plain code picks the slots and Cedar policies decide what's allowed. The agent only writes the notices and answers questions, using read-only tools.</p></details>
-      <details><summary>Do schools need to buy air sensors?</summary><p>No. A school needs coordinates and a timetable. That's what lets it reach government schools, not just the few that can afford monitors.</p></details>
+      <details><summary>Do schools need to buy air sensors, or type in timetables?</summary><p>Neither. A school needs its location and a photo of its timetable. A Strands agent on Amazon Bedrock reads the photo into periods, classes and teachers, and the school is planned at 5:30 the next morning. That's what lets it reach government schools, not just the few that can afford monitors.</p></details>
       <details><summary>Which languages does it speak?</summary><p>Hindi and English today, including a Hindi voice note. Because the agent writes from structured facts, adding Punjabi, Urdu or Bengali is a prompt change, not a rewrite.</p></details>
       <details><summary>What does it cost?</summary><p>[Pricing placeholder] Planned: free for government schools, paid for private schools. The running cost per school is one scheduled workflow and a few model calls a day.</p></details>
     </section>
@@ -204,7 +204,7 @@
       <p class="lede" data-rise>Open the live console, replay 21 November 2025, and approve the plan yourself.</p>
       <div class="cta-row" data-rise>
         <a class="btn btn-primary" href="console.html?date=2025-11-21">Open the live console</a>
-        <a class="btn btn-ghost" href="https://github.com/let-the-dreamers-rise/envaws/blob/claude/admiring-carson-664i25/docs/idea-and-research.md">Read the research</a>
+        <a class="btn btn-ghost" href="onboard.html">Add your school with a photo</a>
       </div>
     </section>
   </main>
@@ -215,7 +215,7 @@
       <p class="brand"><span class="brand-mark" aria-hidden="true"></span>CleanHour</p>
       <p>Built on AWS: Amazon Bedrock · Strands Agents · Cedar · Step Functions · Lambda · DynamoDB · Polly · EventBridge Scheduler · Amplify.</p>
       <p>Air data: Open-Meteo Air Quality API (CAMS). Animation: GSAP (standard no-charge license). Not medical advice.</p>
-      <p><a href="console.html">Principal console</a> · <a href="parent.html">Parent page</a> · <a href="https://github.com/let-the-dreamers-rise/envaws">Source</a></p>
+      <p><a href="console.html">Principal console</a> · <a href="parent.html">Parent page</a> · <a href="onboard.html">Add your school</a> · <a href="https://github.com/let-the-dreamers-rise/envaws">Source</a> · <a href="https://github.com/let-the-dreamers-rise/envaws/blob/claude/admiring-carson-664i25/docs/idea-and-research.md">Research</a></p>
     </div>
   </footer>
 

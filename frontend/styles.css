@@ -180,3 +180,13 @@ audio { width: 100%; margin-top: 4px; }
 .myday .time { width: 74px; flex: none; font-weight: 650; }
 .myday .what.moved { font-weight: 650; color: var(--brand); }
 .myday .what.indoor { font-weight: 650; color: #6d5bd0; }
+
+/* Onboarding */
+.field { width: 100%; font: inherit; padding: 10px 12px; margin-top: 4px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+.drop { display: grid; place-items: center; gap: 10px; min-height: 150px; padding: 16px; border: 2px dashed var(--line); border-radius: var(--radius); background: var(--surface-2); cursor: pointer; text-align: center; color: var(--muted); }
+.drop:hover, .drop:focus-within { border-color: var(--brand); color: var(--text); }
+.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.drop { position: relative; }
+.drop img { max-height: 260px; max-width: 100%; border-radius: 10px; }
+.btn:hover:not(:disabled) { filter: brightness(1.05); }
+.btn:focus-visible, .chip:focus-visible, .seg button:focus-visible, .tabs button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }

@@ -37,6 +37,13 @@ def health(event):
     return 200, {"ok": True}
 
 
+@route("POST", r"/api/schools")
+def create_school(event):
+    b = _body(event)
+    return 201, service.create_school_from_photo(b.get("name", ""), float(b["lat"]), float(b["lon"]),
+                                                 b["image_base64"], b.get("image_format", "jpeg"))
+
+
 @route("GET", r"/api/schools/(?P<sid>[\w-]+)")
 def get_school(event, sid):
     return 200, service.school(sid)
