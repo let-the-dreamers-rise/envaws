@@ -8,6 +8,10 @@ STACK="${STACK:-cleanhour}"
 APP_NAME="${APP_NAME:-cleanhour}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+[ -d "$ROOT/.venv-deploy/bin" ] && export PATH="$ROOT/.venv-deploy/bin:$PATH"
+
+echo "==> Checking AWS credentials"
+aws sts get-caller-identity --query Arn --output text || { echo "No valid AWS credentials. Set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY (and AWS_REGION)."; exit 1; }
 
 echo "==> Creating (or finding) the Amplify Hosting app"
 APP_ID="$(aws amplify list-apps --region "$REGION" --query "apps[?name=='$APP_NAME'].appId | [0]" --output text)"

@@ -6,3 +6,4 @@ samconfig.toml
 node_modules/
 .venv/
 analysis/data/
+.venv-deploy/
